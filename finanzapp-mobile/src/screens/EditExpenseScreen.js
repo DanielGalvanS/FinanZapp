@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { COLORS } from '../constants/colors';
-import DatePickerInput from '../components/forms/DatePickerInput';
 
 const CATEGORIES = [
   { id: 1, name: 'Comida', icon: '🍔', color: '#FF6B6B' },
@@ -19,12 +19,26 @@ const PROJECTS = [
   { id: 3, name: 'Renta Depa' },
 ];
 
-export default function AddExpenseScreen() {
-  const [amount, setAmount] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedProject, setSelectedProject] = useState(PROJECTS[0]);
-  const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date().toLocaleDateString('es-MX'));
+// Datos de ejemplo del gasto que se está editando
+// En producción, estos vendrían de la navegación o del store
+const EXPENSE_TO_EDIT = {
+  id: '1',
+  amount: '120.50',
+  category: { id: 2, name: 'Transporte', icon: '🚗', color: '#4ECDC4' },
+  project: { id: 1, name: 'Personal' },
+  description: 'Viaje del hogar a la oficina en la mañana',
+  date: '27/10/2025',
+};
+
+export default function EditExpenseScreen() {
+  const router = useRouter();
+
+  // Pre-llenar con los datos existentes
+  const [amount, setAmount] = useState(EXPENSE_TO_EDIT.amount);
+  const [selectedCategory, setSelectedCategory] = useState(EXPENSE_TO_EDIT.category);
+  const [selectedProject, setSelectedProject] = useState(EXPENSE_TO_EDIT.project);
+  const [description, setDescription] = useState(EXPENSE_TO_EDIT.description);
+  const [date, setDate] = useState(EXPENSE_TO_EDIT.date);
 
   const handleAmountChange = (text) => {
     const numericValue = text.replace(/[^0-9.]/g, '');
@@ -41,14 +55,39 @@ export default function AddExpenseScreen() {
     }).format(num);
   };
 
+  const handleCancel = () => {
+    Alert.alert(
+      'Cancelar Edición',
+      '¿Deseas descartar los cambios?',
+      [
+        { text: 'Seguir Editando', style: 'cancel' },
+        {
+          text: 'Descartar',
+          style: 'destructive',
+          onPress: () => router.back(),
+        },
+      ]
+    );
+  };
+
   const handleSave = () => {
-    console.log('Saving expense:', {
+    if (!amount || !selectedCategory) {
+      Alert.alert('Error', 'Por favor completa los campos requeridos');
+      return;
+    }
+
+    console.log('Saving edited expense:', {
+      id: EXPENSE_TO_EDIT.id,
       amount,
       category: selectedCategory,
       project: selectedProject,
       description,
       date,
     });
+
+    Alert.alert('Éxito', 'Gasto actualizado correctamente', [
+      { text: 'OK', onPress: () => router.back() }
+    ]);
   };
 
   return (
@@ -60,10 +99,11 @@ export default function AddExpenseScreen() {
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Nuevo Gasto</Text>
-            <TouchableOpacity style={styles.scanButton}>
-              <Text style={styles.scanIcon}>📸</Text>
+            <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
+              <Text style={styles.backIcon}>✕</Text>
             </TouchableOpacity>
+            <Text style={styles.title}>Editar Gasto</Text>
+            <View style={styles.placeholder} />
           </View>
 
           {/* Amount Input */}
@@ -163,25 +203,35 @@ export default function AddExpenseScreen() {
 
           {/* Date */}
           <View style={styles.section}>
-            <DatePickerInput
-              label="Fecha"
-              value={date}
-              onChange={setDate}
-            />
+            <Text style={styles.sectionLabel}>Fecha</Text>
+            <TouchableOpacity style={styles.dateButton}>
+              <Text style={styles.dateIcon}>📅</Text>
+              <Text style={styles.dateText}>{date}</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Save Button */}
-          <TouchableOpacity
-            style={[
-              styles.saveButton,
-              (!amount || !selectedCategory) && styles.saveButtonDisabled,
-            ]}
-            onPress={handleSave}
-            disabled={!amount || !selectedCategory}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.saveButtonText}>Guardar Gasto</Text>
-          </TouchableOpacity>
+          {/* Action Buttons */}
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleCancel}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.cancelButtonText}>Cancelar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.saveButton,
+                (!amount || !selectedCategory) && styles.saveButtonDisabled,
+              ]}
+              onPress={handleSave}
+              disabled={!amount || !selectedCategory}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.saveButtonText}>Guardar Cambios</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Bottom padding for tab bar */}
           <View style={styles.bottomPadding} />
@@ -210,21 +260,26 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 20,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  scanButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.primary,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.gray100,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  scanIcon: {
-    fontSize: 24,
+  backIcon: {
+    fontSize: 20,
+    color: COLORS.text,
+    fontWeight: '600',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  placeholder: {
+    width: 40,
   },
   amountSection: {
     alignItems: 'center',
@@ -369,10 +424,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.text,
   },
-  saveButton: {
-    backgroundColor: COLORS.primary,
-    marginHorizontal: 20,
+  actionsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    gap: 12,
     marginTop: 8,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.gray200,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text,
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: COLORS.primary,
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
@@ -388,7 +462,7 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   saveButtonText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: COLORS.black,
   },

@@ -7,5 +7,3 @@ export { default as InsightsScreen } from './InsightsScreen';
 export { default as ProfileScreen } from './ProfileScreen';
 export { default as ExpenseDetailScreen } from './ExpenseDetailScreen';
 export { default as CardsScreen } from './CardsScreen';
-export { default as ManageProjectsScreen } from './ManageProjectsScreen';
-export { default as ManageCategoriesScreen } from './ManageCategoriesScreen';

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { COLORS } from '../constants/colors';
 
 // Datos de ejemplo
@@ -62,6 +63,15 @@ const MENU_SECTIONS = [
     ],
   },
   {
+    id: 'projects',
+    title: 'Proyectos',
+    icon: '📁',
+    items: [
+      { id: 'projects-manage', label: 'Gestionar Proyectos', subtitle: '3 proyectos activos', action: 'navigate' },
+      { id: 'categories-manage', label: 'Gestionar Categorías', subtitle: '6 categorías', action: 'navigate' },
+    ],
+  },
+  {
     id: 'invitations',
     title: 'Invitaciones',
     icon: '👥',
@@ -96,6 +106,7 @@ const MENU_SECTIONS = [
 ];
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const [toggleStates, setToggleStates] = React.useState({
     '2fa': false,
     push: true,
@@ -112,6 +123,13 @@ export default function ProfileScreen() {
 
   const handleItemPress = (item) => {
     console.log('Item pressed:', item);
+
+    // Navigate to specific screens
+    if (item.id === 'projects-manage') {
+      router.push('/manage-projects');
+    } else if (item.id === 'categories-manage') {
+      router.push('/manage-categories');
+    }
   };
 
   const handleLogout = () => {

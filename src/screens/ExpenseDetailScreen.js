@@ -45,7 +45,7 @@ export default function ExpenseDetailScreen() {
 
   const handleEdit = () => {
     console.log('Edit expense:', expense.id);
-    // router.push(`/edit-expense/${expense.id}`);
+    router.push(`/edit-expense/${expense.id}`);
   };
 
   const handleDelete = () => {
