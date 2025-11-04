@@ -1,17 +1,29 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../constants/colors';
+import {
+  COLORS,
+  SPACING,
+  RADIUS,
+  TYPOGRAPHY,
+  SHADOWS,
+  CARD_STYLES,
+  BUTTON_STYLES,
+  ICON_SIZE,
+  LAYOUT,
+  INPUT_STYLES,
+} from '../constants';
 import DatePickerInput from '../components/forms/DatePickerInput';
 
 const CATEGORIES = [
-  { id: 1, name: 'Comida', icon: 'restaurant-outline', color: '#FF6B6B' },
-  { id: 2, name: 'Transporte', icon: 'car-outline', color: '#4ECDC4' },
-  { id: 3, name: 'Entretenimiento', icon: 'game-controller-outline', color: '#95E1D3' },
-  { id: 4, name: 'Compras', icon: 'cart-outline', color: '#F38181' },
-  { id: 5, name: 'Salud', icon: 'medkit-outline', color: '#A8E6CF' },
-  { id: 6, name: 'Educación', icon: 'book-outline', color: '#FFD3B6' },
+  { id: 1, name: 'Comida', icon: 'restaurant-outline', color: COLORS.categoryFood },
+  { id: 2, name: 'Transporte', icon: 'car-outline', color: COLORS.categoryTransport },
+  { id: 3, name: 'Entretenimiento', icon: 'game-controller-outline', color: COLORS.categoryEntertainment },
+  { id: 4, name: 'Compras', icon: 'cart-outline', color: COLORS.categoryShopping },
+  { id: 5, name: 'Salud', icon: 'medkit-outline', color: COLORS.categoryHealth },
+  { id: 6, name: 'Educación', icon: 'book-outline', color: COLORS.categoryEducation },
 ];
 
 const PROJECTS = [
@@ -21,6 +33,7 @@ const PROJECTS = [
 ];
 
 export default function AddExpenseScreen() {
+  const router = useRouter();
   const [amount, setAmount] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedProject, setSelectedProject] = useState(PROJECTS[0]);
@@ -42,7 +55,16 @@ export default function AddExpenseScreen() {
     }).format(num);
   };
 
+  const handleBack = () => {
+    router.back();
+  };
+
   const handleSave = () => {
+    if (!amount || !selectedCategory) {
+      Alert.alert('Campos requeridos', 'Por favor ingresa el monto y selecciona una categoría');
+      return;
+    }
+
     console.log('Saving expense:', {
       amount,
       category: selectedCategory,
@@ -50,6 +72,16 @@ export default function AddExpenseScreen() {
       description,
       date,
     });
+
+    Alert.alert(
+      'Gasto Guardado',
+      `Gasto de ${formatAmount()} guardado exitosamente`,
+      [{ text: 'OK', onPress: () => router.back() }]
+    );
+  };
+
+  const handleScanReceipt = () => {
+    Alert.alert('Escanear Comprobante', 'Funcionalidad de OCR próximamente');
   };
 
   return (
@@ -61,15 +93,20 @@ export default function AddExpenseScreen() {
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Nuevo Gasto</Text>
-            <TouchableOpacity style={styles.scanButton}>
-              <Ionicons name="camera-outline" size={24} color={COLORS.black} />
+            <TouchableOpacity onPress={handleBack} style={styles.backButton} activeOpacity={0.7}>
+              <Ionicons name="chevron-back" size={ICON_SIZE.md} color={COLORS.text} />
+            </TouchableOpacity>
+            <Text style={TYPOGRAPHY.h3}>Nuevo Gasto</Text>
+            <TouchableOpacity style={styles.scanButton} onPress={handleScanReceipt} activeOpacity={0.7}>
+              <Ionicons name="camera-outline" size={ICON_SIZE.md} color={COLORS.white} />
             </TouchableOpacity>
           </View>
 
           {/* Amount Input */}
           <View style={styles.amountSection}>
-            <Text style={styles.amountLabel}>Cantidad</Text>
+            <Text style={[TYPOGRAPHY.caption, styles.amountLabel]}>
+              Cantidad
+            </Text>
             <View style={styles.amountInputContainer}>
               <Text style={styles.currencySymbol}>$</Text>
               <TextInput
@@ -77,12 +114,14 @@ export default function AddExpenseScreen() {
                 value={amount}
                 onChangeText={handleAmountChange}
                 placeholder="0.00"
-                placeholderTextColor={COLORS.gray400}
+                placeholderTextColor={COLORS.textTertiary}
                 keyboardType="decimal-pad"
                 maxLength={10}
               />
             </View>
-            <Text style={styles.amountFormatted}>{formatAmount()} MXN</Text>
+            <Text style={[TYPOGRAPHY.caption, styles.amountFormatted]}>
+              {formatAmount()} MXN
+            </Text>
           </View>
 
           {/* Category Selection */}
@@ -94,7 +133,10 @@ export default function AddExpenseScreen() {
                   key={category.id}
                   style={[
                     styles.categoryItem,
-                    selectedCategory?.id === category.id && styles.categoryItemSelected,
+                    selectedCategory?.id === category.id && [
+                      styles.categoryItemSelected,
+                      { borderColor: category.color, backgroundColor: category.color + '10' },
+                    ],
                   ]}
                   onPress={() => setSelectedCategory(category)}
                   activeOpacity={0.7}
@@ -108,12 +150,13 @@ export default function AddExpenseScreen() {
                   >
                     <Ionicons
                       name={category.icon}
-                      size={24}
+                      size={ICON_SIZE.md}
                       color={selectedCategory?.id === category.id ? COLORS.white : category.color}
                     />
                   </View>
                   <Text
                     style={[
+                      TYPOGRAPHY.caption,
                       styles.categoryName,
                       selectedCategory?.id === category.id && styles.categoryNameSelected,
                     ]}
@@ -141,6 +184,7 @@ export default function AddExpenseScreen() {
                 >
                   <Text
                     style={[
+                      TYPOGRAPHY.body,
                       styles.projectText,
                       selectedProject?.id === project.id && styles.projectTextSelected,
                     ]}
@@ -156,13 +200,14 @@ export default function AddExpenseScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Descripción (opcional)</Text>
             <TextInput
-              style={styles.descriptionInput}
+              style={[INPUT_STYLES.base, styles.descriptionInput]}
               value={description}
               onChangeText={setDescription}
               placeholder="Ej: Comida en restaurante..."
               placeholderTextColor={COLORS.textSecondary}
               multiline
               numberOfLines={3}
+              textAlignVertical="top"
             />
           </View>
 
@@ -178,6 +223,7 @@ export default function AddExpenseScreen() {
           {/* Save Button */}
           <TouchableOpacity
             style={[
+              BUTTON_STYLES.accent,
               styles.saveButton,
               (!amount || !selectedCategory) && styles.saveButtonDisabled,
             ]}
@@ -185,7 +231,9 @@ export default function AddExpenseScreen() {
             disabled={!amount || !selectedCategory}
             activeOpacity={0.8}
           >
-            <Text style={styles.saveButtonText}>Guardar Gasto</Text>
+            <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.white }]}>
+              Guardar Gasto
+            </Text>
           </TouchableOpacity>
 
           {/* Bottom padding for tab bar */}
@@ -211,36 +259,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 20,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.xl,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: COLORS.text,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.round,
+    backgroundColor: COLORS.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scanButton: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: RADIUS.round,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    ...SHADOWS.md,
   },
   amountSection: {
     alignItems: 'center',
-    paddingVertical: 32,
-    backgroundColor: COLORS.gray50,
-    marginHorizontal: 20,
-    marginBottom: 24,
-    borderRadius: 24,
+    paddingVertical: SPACING.xxxl,
+    backgroundColor: COLORS.backgroundSecondary,
+    marginHorizontal: SPACING.xl,
+    marginBottom: SPACING.xxl,
+    borderRadius: RADIUS.xl,
   },
   amountLabel: {
-    fontSize: 14,
     color: COLORS.textSecondary,
     fontWeight: '600',
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
   },
   amountInputContainer: {
     flexDirection: 'row',
@@ -248,148 +299,99 @@ const styles = StyleSheet.create({
   },
   currencySymbol: {
     fontSize: 40,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: COLORS.text,
   },
   amountInput: {
     fontSize: 56,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: COLORS.text,
     minWidth: 120,
     textAlign: 'center',
+    letterSpacing: -2,
   },
   amountFormatted: {
-    fontSize: 16,
     color: COLORS.textSecondary,
-    marginTop: 8,
+    marginTop: SPACING.sm,
     fontWeight: '600',
   },
   section: {
-    paddingHorizontal: 20,
-    marginBottom: 28,
+    paddingHorizontal: SPACING.xl,
+    marginBottom: SPACING.xxl,
   },
   sectionLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 12,
+    ...TYPOGRAPHY.bodyBold,
+    marginBottom: SPACING.md,
   },
   categoriesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginHorizontal: -6,
+    marginHorizontal: -SPACING.xs,
   },
   categoryItem: {
     width: '30%',
     alignItems: 'center',
-    padding: 12,
+    padding: SPACING.md,
     marginHorizontal: '1.5%',
-    marginBottom: 12,
-    borderRadius: 16,
+    marginBottom: SPACING.md,
+    borderRadius: RADIUS.md,
     backgroundColor: COLORS.white,
     borderWidth: 2,
-    borderColor: COLORS.gray200,
+    borderColor: COLORS.border,
   },
   categoryItemSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primary + '10',
+    borderWidth: 2,
   },
   categoryIconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: SPACING.sm,
   },
   categoryName: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.text,
     textAlign: 'center',
+    fontWeight: '600',
   },
   categoryNameSelected: {
-    color: COLORS.text,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   projectsRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: SPACING.md,
   },
   projectButton: {
     flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 16,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.md,
     backgroundColor: COLORS.white,
     borderWidth: 2,
-    borderColor: COLORS.gray200,
+    borderColor: COLORS.border,
     alignItems: 'center',
   },
   projectButtonSelected: {
     borderColor: COLORS.primary,
-    backgroundColor: COLORS.primary + '10',
+    backgroundColor: COLORS.primaryAlpha10,
   },
   projectText: {
-    fontSize: 15,
     fontWeight: '600',
-    color: COLORS.text,
   },
   projectTextSelected: {
-    color: COLORS.text,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   descriptionInput: {
-    backgroundColor: COLORS.white,
-    borderWidth: 2,
-    borderColor: COLORS.gray200,
-    borderRadius: 16,
-    padding: 16,
-    fontSize: 16,
-    color: COLORS.text,
     minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  dateButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderWidth: 2,
-    borderColor: COLORS.gray200,
-    borderRadius: 16,
-    padding: 16,
-  },
-  dateIcon: {
-    fontSize: 20,
-    marginRight: 12,
-  },
-  dateText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
   },
   saveButton: {
-    backgroundColor: COLORS.primary,
-    marginHorizontal: 20,
-    marginTop: 8,
-    paddingVertical: 18,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    marginHorizontal: SPACING.xl,
+    marginTop: SPACING.sm,
   },
   saveButtonDisabled: {
     backgroundColor: COLORS.gray300,
     shadowOpacity: 0,
     elevation: 0,
-  },
-  saveButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.black,
   },
   bottomPadding: {
     height: 100,

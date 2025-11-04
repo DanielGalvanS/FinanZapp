@@ -1,4 +1,6 @@
 // App constants
+export * from './colors';
+export * from './styling';
 
 // Currency format (Mexican Peso)
 export const CURRENCY = {
@@ -30,17 +32,17 @@ export const USER_ROLES = {
   VIEWER: 'viewer',
 };
 
-// Expense categories (default)
+// Expense categories (default) - Using Ionicons
 export const DEFAULT_CATEGORIES = [
-  { name: 'Alimentos', icon: '🍔', color: '#FF6B6B' },
-  { name: 'Transporte', icon: '🚗', color: '#4ECDC4' },
-  { name: 'Vivienda', icon: '🏠', color: '#45B7D1' },
-  { name: 'Servicios', icon: '💡', color: '#FFA07A' },
-  { name: 'Entretenimiento', icon: '🎬', color: '#98D8C8' },
-  { name: 'Salud', icon: '⚕️', color: '#F7DC6F' },
-  { name: 'Educación', icon: '📚', color: '#BB8FCE' },
-  { name: 'Compras', icon: '🛍️', color: '#85C1E2' },
-  { name: 'Otros', icon: '📌', color: '#95A5A6' },
+  { name: 'Alimentos', icon: 'restaurant-outline', color: '#FF6B6B' },
+  { name: 'Transporte', icon: 'car-outline', color: '#4ECDC4' },
+  { name: 'Vivienda', icon: 'home-outline', color: '#45B7D1' },
+  { name: 'Servicios', icon: 'bulb-outline', color: '#FFA07A' },
+  { name: 'Entretenimiento', icon: 'film-outline', color: '#98D8C8' },
+  { name: 'Salud', icon: 'medkit-outline', color: '#F7DC6F' },
+  { name: 'Educación', icon: 'book-outline', color: '#BB8FCE' },
+  { name: 'Compras', icon: 'cart-outline', color: '#85C1E2' },
+  { name: 'Otros', icon: 'ellipsis-horizontal-circle-outline', color: '#95A5A6' },
 ];
 
 // Storage keys (AsyncStorage)

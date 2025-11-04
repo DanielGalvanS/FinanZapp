@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
     marginHorizontal: 20,
     marginBottom: 24,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.backgroundSecondary,
     borderRadius: 24,
   },
   amountLabel: {

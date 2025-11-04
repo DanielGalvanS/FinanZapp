@@ -3,7 +3,15 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../constants/colors';
+import {
+  COLORS,
+  SPACING,
+  RADIUS,
+  TYPOGRAPHY,
+  CARD_STYLES,
+  BUTTON_STYLES,
+  ICON_SIZE,
+} from '../constants';
 
 const FILTER_OPTIONS = ['Todo', 'Comida', 'Transporte', 'Entretenimiento', 'Compras'];
 
@@ -47,42 +55,42 @@ export default function ExpensesScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Gastos</Text>
-          <TouchableOpacity style={styles.exportButton}>
-            <Ionicons name="bar-chart-outline" size={20} color={COLORS.black} />
+          <Text style={TYPOGRAPHY.h2}>Gastos</Text>
+          <TouchableOpacity style={styles.exportButton} activeOpacity={0.7}>
+            <Ionicons name="bar-chart-outline" size={ICON_SIZE.sm} color={COLORS.white} />
           </TouchableOpacity>
         </View>
 
         {/* Summary Card */}
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>Total del Mes</Text>
-          <Text style={styles.summaryAmount}>{formatCurrency(42330)}</Text>
+        <View style={[CARD_STYLES.dark, styles.summaryCard]}>
+          <Text style={[TYPOGRAPHY.caption, styles.summaryLabel]}>Total del Mes</Text>
+          <Text style={[TYPOGRAPHY.h1, styles.summaryAmount]}>{formatCurrency(42330)}</Text>
           <View style={styles.summaryStats}>
             <View style={styles.summaryStatItem}>
-              <Text style={styles.summaryStatLabel}>Transacciones</Text>
-              <Text style={styles.summaryStatValue}>128</Text>
+              <Text style={[TYPOGRAPHY.caption, styles.summaryStatLabel]}>Transacciones</Text>
+              <Text style={[TYPOGRAPHY.lg, styles.summaryStatValue]}>128</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryStatItem}>
-              <Text style={styles.summaryStatLabel}>Promedio</Text>
-              <Text style={styles.summaryStatValue}>{formatCurrency(330)}</Text>
+              <Text style={[TYPOGRAPHY.caption, styles.summaryStatLabel]}>Promedio</Text>
+              <Text style={[TYPOGRAPHY.lg, styles.summaryStatValue]}>{formatCurrency(330)}</Text>
             </View>
           </View>
         </View>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={18} color={COLORS.textSecondary} />
+          <Ionicons name="search-outline" size={ICON_SIZE.sm} color={COLORS.textSecondary} />
           <TextInput
-            style={styles.searchInput}
+            style={[TYPOGRAPHY.body, styles.searchInput]}
             placeholder="Buscar transacciones..."
             placeholderTextColor={COLORS.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={18} color={COLORS.textSecondary} />
+            <TouchableOpacity onPress={() => setSearchQuery('')} activeOpacity={0.7}>
+              <Ionicons name="close-circle" size={ICON_SIZE.sm} color={COLORS.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -98,16 +106,19 @@ export default function ExpensesScreen() {
             <TouchableOpacity
               key={filter}
               style={[
+                selectedFilter === filter ? BUTTON_STYLES.pillActive : BUTTON_STYLES.pill,
                 styles.filterPill,
-                selectedFilter === filter && styles.filterPillActive,
               ]}
               onPress={() => setSelectedFilter(filter)}
               activeOpacity={0.7}
             >
               <Text
                 style={[
-                  styles.filterText,
-                  selectedFilter === filter && styles.filterTextActive,
+                  TYPOGRAPHY.caption,
+                  {
+                    color: selectedFilter === filter ? COLORS.white : COLORS.text,
+                    fontWeight: selectedFilter === filter ? '700' : '600',
+                  },
                 ]}
               >
                 {filter}
@@ -119,10 +130,10 @@ export default function ExpensesScreen() {
         {/* Transactions List */}
         <View style={styles.transactionsContainer}>
           <View style={styles.transactionsHeader}>
-            <Text style={styles.transactionsTitle}>
+            <Text style={[TYPOGRAPHY.bodyBold, styles.transactionsTitle]}>
               {filteredTransactions.length} Transacciones
             </Text>
-            <Text style={styles.transactionsTotal}>
+            <Text style={[TYPOGRAPHY.bodyBold, styles.transactionsTotal]}>
               {formatCurrency(totalExpenses)}
             </Text>
           </View>
@@ -130,26 +141,26 @@ export default function ExpensesScreen() {
           {filteredTransactions.map((transaction) => (
             <TouchableOpacity
               key={transaction.id}
-              style={styles.transactionItem}
+              style={[CARD_STYLES.minimal, styles.transactionItem]}
               activeOpacity={0.7}
               onPress={() => handleTransactionPress(transaction.id)}
             >
               <View style={styles.transactionLeft}>
                 <View style={[styles.transactionIcon, { backgroundColor: transaction.color + '20' }]}>
-                  <Ionicons name={transaction.icon} size={22} color={transaction.color} />
+                  <Ionicons name={transaction.icon} size={ICON_SIZE.md} color={transaction.color} />
                 </View>
                 <View style={styles.transactionInfo}>
-                  <Text style={styles.transactionName}>{transaction.name}</Text>
-                  <Text style={styles.transactionMeta}>
+                  <Text style={[TYPOGRAPHY.bodyBold, styles.transactionName]}>{transaction.name}</Text>
+                  <Text style={[TYPOGRAPHY.caption, styles.transactionMeta]}>
                     {transaction.category} • {transaction.time}
                   </Text>
                 </View>
               </View>
               <View style={styles.transactionRight}>
-                <Text style={styles.transactionAmount}>
+                <Text style={[TYPOGRAPHY.bodyBold, styles.transactionAmount]}>
                   -{formatCurrency(transaction.amount)}
                 </Text>
-                <Text style={styles.transactionDate}>{transaction.date}</Text>
+                <Text style={[TYPOGRAPHY.tiny, styles.transactionDate]}>{transaction.date}</Text>
               </View>
             </TouchableOpacity>
           ))}
@@ -174,150 +185,101 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.lg,
   },
   exportButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: RADIUS.round,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  exportIcon: {
-    fontSize: 20,
-  },
   summaryCard: {
-    backgroundColor: COLORS.gray900,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    padding: 24,
-    borderRadius: 24,
+    marginHorizontal: SPACING.xl,
+    marginBottom: SPACING.xl,
   },
   summaryLabel: {
-    fontSize: 14,
     color: COLORS.white,
     opacity: 0.7,
     fontWeight: '500',
   },
   summaryAmount: {
-    fontSize: 36,
-    fontWeight: 'bold',
     color: COLORS.white,
-    marginTop: 8,
-    letterSpacing: -1,
+    marginTop: SPACING.sm,
+    letterSpacing: -2,
   },
   summaryStats: {
     flexDirection: 'row',
-    marginTop: 20,
-    paddingTop: 20,
+    marginTop: SPACING.xl,
+    paddingTop: SPACING.xl,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
+    borderTopColor: 'rgba(255,255,255,0.15)',
   },
   summaryStatItem: {
     flex: 1,
   },
   summaryStatLabel: {
-    fontSize: 12,
     color: COLORS.white,
     opacity: 0.6,
     fontWeight: '500',
   },
   summaryStatValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: COLORS.white,
-    marginTop: 4,
+    marginTop: SPACING.xs,
   },
   summaryDivider: {
     width: 1,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    marginHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    marginHorizontal: SPACING.lg,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.gray100,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
-  },
-  searchIcon: {
-    fontSize: 18,
-    marginRight: 8,
+    backgroundColor: COLORS.backgroundSecondary,
+    marginHorizontal: SPACING.xl,
+    marginBottom: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
+    gap: SPACING.sm,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
     color: COLORS.text,
-  },
-  clearIcon: {
-    fontSize: 16,
-    color: COLORS.textSecondary,
-    paddingLeft: 8,
   },
   filtersScroll: {
-    marginBottom: 20,
+    marginBottom: SPACING.xl,
   },
   filtersContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: SPACING.xl,
   },
   filterPill: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: COLORS.gray100,
-    marginRight: 8,
-  },
-  filterPillActive: {
-    backgroundColor: COLORS.primary,
-  },
-  filterText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  filterTextActive: {
-    color: COLORS.black,
+    marginRight: SPACING.sm,
   },
   transactionsContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: SPACING.xl,
   },
   transactionsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
   },
   transactionsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
     color: COLORS.textSecondary,
   },
   transactionsTotal: {
-    fontSize: 16,
-    fontWeight: 'bold',
     color: COLORS.text,
   },
   transactionItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.gray200,
+    marginBottom: SPACING.md,
   },
   transactionLeft: {
     flexDirection: 'row',
@@ -327,38 +289,28 @@ const styles = StyleSheet.create({
   transactionIcon: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
-  },
-  transactionEmoji: {
-    fontSize: 20,
+    marginRight: SPACING.md,
   },
   transactionInfo: {
     flex: 1,
   },
   transactionName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
   },
   transactionMeta: {
-    fontSize: 13,
     color: COLORS.textSecondary,
   },
   transactionRight: {
     alignItems: 'flex-end',
   },
   transactionAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
     color: COLORS.error,
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
   },
   transactionDate: {
-    fontSize: 12,
     color: COLORS.textSecondary,
   },
   bottomPadding: {

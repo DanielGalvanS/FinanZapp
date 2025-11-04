@@ -3,7 +3,14 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../constants/colors';
+import {
+  COLORS,
+  SPACING,
+  RADIUS,
+  TYPOGRAPHY,
+  CARD_STYLES,
+  ICON_SIZE,
+} from '../constants';
 
 // Datos de ejemplo
 const USER_DATA = {
@@ -48,7 +55,7 @@ const MENU_SECTIONS = [
     icon: 'color-palette-outline',
     items: [
       { id: 'theme', label: 'Tema', value: 'Claro', action: 'navigate' },
-      { id: 'accent', label: 'Color de Acento', value: '#C8FF00', action: 'navigate' },
+      { id: 'accent', label: 'Color de Acento', value: '#1c1c1c', action: 'navigate' },
     ],
   },
   {
@@ -149,13 +156,14 @@ export default function ProfileScreen() {
       >
         <View style={styles.menuItemLeft}>
           <Text style={[
+            TYPOGRAPHY.body,
             styles.menuItemLabel,
             item.danger && styles.menuItemLabelDanger
           ]}>
             {item.label}
           </Text>
           {item.subtitle && (
-            <Text style={styles.menuItemSubtitle}>{item.subtitle}</Text>
+            <Text style={[TYPOGRAPHY.caption, styles.menuItemSubtitle]}>{item.subtitle}</Text>
           )}
         </View>
 
@@ -167,7 +175,7 @@ export default function ProfileScreen() {
           )}
 
           {item.value && item.action !== 'toggle' && (
-            <Text style={styles.menuItemValue}>{item.value}</Text>
+            <Text style={[TYPOGRAPHY.body, styles.menuItemValue]}>{item.value}</Text>
           )}
 
           {item.action === 'toggle' ? (
@@ -191,20 +199,20 @@ export default function ProfileScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Perfil</Text>
+          <Text style={TYPOGRAPHY.h2}>Perfil</Text>
         </View>
 
         {/* User Info Card */}
-        <View style={styles.userCard}>
+        <View style={[CARD_STYLES.minimal, styles.userCard]}>
           <View style={styles.avatarContainer}>
-            <Ionicons name="person" size={32} color={COLORS.black} />
+            <Ionicons name="person" size={ICON_SIZE.xl} color={COLORS.white} />
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{USER_DATA.name}</Text>
-            <Text style={styles.userEmail}>{USER_DATA.email}</Text>
+            <Text style={[TYPOGRAPHY.lg, styles.userName]}>{USER_DATA.name}</Text>
+            <Text style={[TYPOGRAPHY.body, styles.userEmail]}>{USER_DATA.email}</Text>
           </View>
-          <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.editButtonText}>Editar</Text>
+          <TouchableOpacity style={styles.editButton} activeOpacity={0.7}>
+            <Text style={[TYPOGRAPHY.body, styles.editButtonText]}>Editar</Text>
           </TouchableOpacity>
         </View>
 
@@ -212,10 +220,10 @@ export default function ProfileScreen() {
         {MENU_SECTIONS.map((section, sectionIndex) => (
           <View key={section.id} style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name={section.icon} size={20} color={COLORS.textSecondary} />
-              <Text style={styles.sectionTitle}>{section.title}</Text>
+              <Ionicons name={section.icon} size={ICON_SIZE.sm} color={COLORS.textSecondary} />
+              <Text style={[TYPOGRAPHY.bodyBold, styles.sectionTitle]}>{section.title}</Text>
             </View>
-            <View style={styles.menuCard}>
+            <View style={[CARD_STYLES.minimal, styles.menuCard]}>
               {section.items.map((item, itemIndex) =>
                 renderMenuItem(item, itemIndex === section.items.length - 1)
               )}
@@ -229,12 +237,12 @@ export default function ProfileScreen() {
           onPress={handleLogout}
           activeOpacity={0.7}
         >
-          <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
-          <Text style={styles.logoutText}>Cerrar Sesión</Text>
+          <Ionicons name="log-out-outline" size={ICON_SIZE.sm} color={COLORS.error} />
+          <Text style={[TYPOGRAPHY.bodyBold, styles.logoutText]}>Cerrar Sesión</Text>
         </TouchableOpacity>
 
         {/* Version Info */}
-        <Text style={styles.versionText}>FinanzApp v1.0.0</Text>
+        <Text style={[TYPOGRAPHY.caption, styles.versionText]}>FinanzApp v1.0.0</Text>
 
         {/* Bottom padding for tab bar */}
         <View style={styles.bottomPadding} />
@@ -252,90 +260,69 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: COLORS.text,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.lg,
   },
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
-    marginHorizontal: 20,
-    marginBottom: 24,
-    padding: 20,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: COLORS.gray200,
+    marginHorizontal: SPACING.xl,
+    marginBottom: SPACING.xxl,
   },
   avatarContainer: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: RADIUS.round,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: SPACING.lg,
   },
   userInfo: {
     flex: 1,
   },
   userName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: 4,
+    fontWeight: '700',
+    marginBottom: SPACING.xs,
   },
   userEmail: {
-    fontSize: 14,
     color: COLORS.textSecondary,
   },
   editButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: COLORS.gray100,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.backgroundSecondary,
   },
   editButtonText: {
-    fontSize: 14,
     fontWeight: '600',
-    color: COLORS.text,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: SPACING.xxl,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 12,
-    gap: 8,
+    paddingHorizontal: SPACING.xl,
+    marginBottom: SPACING.md,
+    gap: SPACING.sm,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
     color: COLORS.textSecondary,
   },
   menuCard: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.gray200,
+    marginHorizontal: SPACING.xl,
     overflow: 'hidden',
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.gray200,
+    borderBottomColor: COLORS.border,
   },
   menuItemLast: {
     borderBottomWidth: 0,
@@ -344,28 +331,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuItemLabel: {
-    fontSize: 16,
     fontWeight: '500',
-    color: COLORS.text,
     marginBottom: 2,
   },
   menuItemLabelDanger: {
     color: COLORS.error,
   },
   menuItemSubtitle: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginTop: 2,
+    marginTop: SPACING.xs,
   },
   menuItemRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: SPACING.sm,
   },
   menuItemValue: {
-    fontSize: 15,
     color: COLORS.textSecondary,
-    marginRight: 4,
+    marginRight: SPACING.xs,
   },
   menuItemChevron: {
     fontSize: 24,
@@ -374,41 +356,38 @@ const styles = StyleSheet.create({
   },
   badge: {
     backgroundColor: COLORS.primary,
-    borderRadius: 12,
-    paddingHorizontal: 8,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
     minWidth: 24,
     alignItems: 'center',
   },
   badgeText: {
     fontSize: 12,
-    fontWeight: 'bold',
-    color: COLORS.black,
+    fontWeight: '700',
+    color: COLORS.white,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.white,
-    marginHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 20,
-    padding: 16,
-    borderRadius: 16,
+    marginHorizontal: SPACING.xl,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.xl,
+    padding: SPACING.lg,
+    borderRadius: RADIUS.md,
     borderWidth: 2,
     borderColor: COLORS.error,
-    gap: 8,
+    gap: SPACING.sm,
   },
   logoutText: {
-    fontSize: 16,
-    fontWeight: '600',
     color: COLORS.error,
   },
   versionText: {
     textAlign: 'center',
-    fontSize: 13,
     color: COLORS.textSecondary,
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
   },
   bottomPadding: {
     height: 100,
