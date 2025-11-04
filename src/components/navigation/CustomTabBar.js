@@ -2,38 +2,43 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/colors';
 
 const TABS = [
   {
     name: 'home',
     label: 'Home',
-    icon: '🏠',
+    icon: 'home-outline',
+    iconActive: 'home',
     route: '/',
   },
   {
     name: 'expenses',
     label: 'Gastos',
-    icon: '📊',
+    icon: 'list-outline',
+    iconActive: 'list',
     route: '/expenses',
   },
   {
     name: 'add-expense',
     label: 'Agregar',
-    icon: '+',
+    icon: 'add',
     route: '/add-expense',
     isSpecial: true,
   },
   {
     name: 'insights',
     label: 'Insights',
-    icon: '📈',
+    icon: 'stats-chart-outline',
+    iconActive: 'stats-chart',
     route: '/insights',
   },
   {
     name: 'profile',
     label: 'Perfil',
-    icon: '👤',
+    icon: 'person-outline',
+    iconActive: 'person',
     route: '/profile',
   },
 ];
@@ -64,7 +69,7 @@ export default function CustomTabBar() {
               activeOpacity={0.7}
             >
               <View style={styles.specialButton}>
-                <Text style={styles.specialIcon}>{tab.icon}</Text>
+                <Ionicons name={tab.icon} size={28} color={COLORS.white} />
               </View>
             </TouchableOpacity>
           );
@@ -78,7 +83,11 @@ export default function CustomTabBar() {
             activeOpacity={0.7}
           >
             <View style={[styles.iconContainer, active && styles.iconContainerActive]}>
-              <Text style={styles.icon}>{tab.icon}</Text>
+              <Ionicons
+                name={active ? tab.iconActive : tab.icon}
+                size={24}
+                color={active ? COLORS.text : COLORS.textSecondary}
+              />
             </View>
             <Text
               style={[
@@ -128,9 +137,6 @@ const styles = StyleSheet.create({
   iconContainerActive: {
     backgroundColor: COLORS.gray100,
   },
-  icon: {
-    fontSize: 24,
-  },
   label: {
     fontSize: 11,
     color: COLORS.textSecondary,
@@ -162,10 +168,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 8,
-  },
-  specialIcon: {
-    color: COLORS.white,
-    fontSize: 32,
-    fontWeight: 'bold',
   },
 });

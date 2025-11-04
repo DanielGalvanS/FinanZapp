@@ -2,21 +2,24 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 
 // Datos de ejemplo - En producción vendrían del estado global
 const INITIAL_CATEGORIES = [
-  { id: 1, name: 'Comida', icon: '🍔', color: '#FF6B6B', expenseCount: 28, totalAmount: 8420.50, isDefault: true },
-  { id: 2, name: 'Transporte', icon: '🚗', color: '#4ECDC4', expenseCount: 15, totalAmount: 3200.00, isDefault: true },
-  { id: 3, name: 'Entretenimiento', icon: '🎮', color: '#95E1D3', expenseCount: 12, totalAmount: 2500.00, isDefault: true },
-  { id: 4, name: 'Compras', icon: '🛍️', color: '#F38181', expenseCount: 22, totalAmount: 6800.00, isDefault: true },
-  { id: 5, name: 'Salud', icon: '⚕️', color: '#A8E6CF', expenseCount: 8, totalAmount: 4200.00, isDefault: true },
-  { id: 6, name: 'Educación', icon: '📚', color: '#FFD3B6', expenseCount: 5, totalAmount: 1950.00, isDefault: true },
+  { id: 1, name: 'Comida', icon: 'restaurant-outline', color: '#FF6B6B', expenseCount: 28, totalAmount: 8420.50, isDefault: true },
+  { id: 2, name: 'Transporte', icon: 'car-outline', color: '#4ECDC4', expenseCount: 15, totalAmount: 3200.00, isDefault: true },
+  { id: 3, name: 'Entretenimiento', icon: 'game-controller-outline', color: '#95E1D3', expenseCount: 12, totalAmount: 2500.00, isDefault: true },
+  { id: 4, name: 'Compras', icon: 'cart-outline', color: '#F38181', expenseCount: 22, totalAmount: 6800.00, isDefault: true },
+  { id: 5, name: 'Salud', icon: 'medkit-outline', color: '#A8E6CF', expenseCount: 8, totalAmount: 4200.00, isDefault: true },
+  { id: 6, name: 'Educación', icon: 'book-outline', color: '#FFD3B6', expenseCount: 5, totalAmount: 1950.00, isDefault: true },
 ];
 
 const AVAILABLE_ICONS = [
-  '🍔', '🚗', '🎮', '🛍️', '⚕️', '📚', '✈️', '🏠', '💼', '🎬',
-  '🏋️', '🐕', '🎨', '💰', '🔧', '📱', '☕', '🌳', '🎵', '🏖️',
+  'restaurant-outline', 'car-outline', 'game-controller-outline', 'cart-outline', 'medkit-outline', 'book-outline',
+  'airplane-outline', 'home-outline', 'briefcase-outline', 'film-outline', 'barbell-outline', 'paw-outline',
+  'color-palette-outline', 'wallet-outline', 'build-outline', 'phone-portrait-outline', 'cafe-outline',
+  'leaf-outline', 'musical-notes-outline', 'beach-outline',
 ];
 
 const AVAILABLE_COLORS = [
@@ -147,7 +150,7 @@ export default function ManageCategoriesScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Text style={styles.backIcon}>‹</Text>
+            <Ionicons name="chevron-back" size={24} color={COLORS.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Gestionar Categorías</Text>
           <View style={styles.placeholder} />
@@ -170,7 +173,7 @@ export default function ManageCategoriesScreen() {
             {defaultCategories.map((category) => (
               <View key={category.id} style={styles.categoryCard}>
                 <View style={[styles.categoryIconContainer, { backgroundColor: category.color }]}>
-                  <Text style={styles.categoryIcon}>{category.icon}</Text>
+                  <Ionicons name={category.icon} size={28} color={COLORS.white} />
                 </View>
                 <Text style={styles.categoryName}>{category.name}</Text>
                 <View style={styles.categoryStats}>
@@ -190,7 +193,7 @@ export default function ManageCategoriesScreen() {
 
           {customCategories.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateIcon}>📁</Text>
+              <Ionicons name="folder-outline" size={64} color={COLORS.textSecondary} />
               <Text style={styles.emptyStateText}>No tienes categorías personalizadas</Text>
               <Text style={styles.emptyStateSubtext}>Crea una para organizar tus gastos</Text>
             </View>
@@ -199,7 +202,7 @@ export default function ManageCategoriesScreen() {
               {customCategories.map((category) => (
                 <View key={category.id} style={styles.categoryCard}>
                   <View style={[styles.categoryIconContainer, { backgroundColor: category.color }]}>
-                    <Text style={styles.categoryIcon}>{category.icon}</Text>
+                    <Ionicons name={category.icon} size={28} color={COLORS.white} />
                   </View>
                   <Text style={styles.categoryName}>{category.name}</Text>
                   <View style={styles.categoryStats}>
@@ -213,13 +216,13 @@ export default function ManageCategoriesScreen() {
                       style={styles.categoryActionButton}
                       onPress={() => handleEditCategory(category)}
                     >
-                      <Text style={styles.categoryActionIcon}>✏️</Text>
+                      <Ionicons name="create-outline" size={16} color={COLORS.text} />
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.categoryActionButton}
                       onPress={() => handleDeleteCategory(category)}
                     >
-                      <Text style={styles.categoryActionIcon}>🗑️</Text>
+                      <Ionicons name="trash-outline" size={16} color={COLORS.error} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -276,7 +279,7 @@ export default function ManageCategoriesScreen() {
                     ]}
                     onPress={() => setSelectedIcon(icon)}
                   >
-                    <Text style={styles.iconOptionText}>{icon}</Text>
+                    <Ionicons name={icon} size={28} color={COLORS.text} />
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -309,7 +312,7 @@ export default function ManageCategoriesScreen() {
               <Text style={styles.previewLabel}>Vista Previa</Text>
               <View style={styles.previewCard}>
                 <View style={[styles.previewIcon, { backgroundColor: selectedColor }]}>
-                  <Text style={styles.previewIconText}>{selectedIcon}</Text>
+                  <Ionicons name={selectedIcon} size={32} color={COLORS.white} />
                 </View>
                 <Text style={styles.previewName}>{categoryName || 'Categoría'}</Text>
               </View>

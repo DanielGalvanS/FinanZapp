@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 
 export default function InsightsScreen() {
@@ -23,7 +24,7 @@ export default function InsightsScreen() {
               <Text style={styles.dashboardLabel}>Balance Total</Text>
               <Text style={styles.dashboardAmount}>$651,972</Text>
               <View style={styles.dashboardTrend}>
-                <Text style={styles.trendIcon}>↗️</Text>
+                <Ionicons name="trending-up" size={16} color={COLORS.black} />
                 <Text style={styles.trendText}>+12.5%</Text>
               </View>
             </View>
@@ -47,7 +48,7 @@ export default function InsightsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionIcon}>💰</Text>
+              <Ionicons name="wallet-outline" size={20} color={COLORS.text} />
               <Text style={styles.sectionTitle}>Presupuestos</Text>
             </View>
             <TouchableOpacity>
@@ -87,7 +88,7 @@ export default function InsightsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionIcon}>🎯</Text>
+              <Ionicons name="flag-outline" size={20} color={COLORS.text} />
               <Text style={styles.sectionTitle}>Metas Financieras</Text>
             </View>
             <TouchableOpacity>
@@ -123,26 +124,26 @@ export default function InsightsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionIcon}>📋</Text>
+              <Ionicons name="document-text-outline" size={20} color={COLORS.text} />
               <Text style={styles.sectionTitle}>Reportes</Text>
             </View>
           </View>
 
           <View style={styles.reportsGrid}>
             <TouchableOpacity style={styles.reportCard}>
-              <Text style={styles.reportIcon}>📅</Text>
+              <Ionicons name="calendar-outline" size={32} color={COLORS.text} />
               <Text style={styles.reportLabel}>Mensual</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.reportCard}>
-              <Text style={styles.reportIcon}>📆</Text>
+              <Ionicons name="calendar" size={32} color={COLORS.text} />
               <Text style={styles.reportLabel}>Anual</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.reportCard}>
-              <Text style={styles.reportIcon}>📁</Text>
+              <Ionicons name="folder-outline" size={32} color={COLORS.text} />
               <Text style={styles.reportLabel}>Por Proyecto</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.reportCard}>
-              <Text style={styles.reportIcon}>⚙️</Text>
+              <Ionicons name="settings-outline" size={32} color={COLORS.text} />
               <Text style={styles.reportLabel}>Personalizado</Text>
             </TouchableOpacity>
           </View>
@@ -152,7 +153,7 @@ export default function InsightsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionIcon}>✅</Text>
+              <Ionicons name="checkmark-circle-outline" size={20} color={COLORS.text} />
               <Text style={styles.sectionTitle}>Aprobaciones</Text>
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>3</Text>
@@ -165,7 +166,9 @@ export default function InsightsScreen() {
 
           <View style={styles.approvalCard}>
             <View style={styles.approvalHeader}>
-              <Text style={styles.approvalIcon}>🍔</Text>
+              <View style={styles.approvalIconContainer}>
+                <Ionicons name="restaurant-outline" size={24} color="#FF6B6B" />
+              </View>
               <View style={styles.approvalInfo}>
                 <Text style={styles.approvalName}>Comida en Restaurante</Text>
                 <Text style={styles.approvalUser}>Por Juan Pérez</Text>
@@ -305,6 +308,7 @@ const styles = StyleSheet.create({
   sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   sectionIcon: {
     fontSize: 20,
@@ -452,6 +456,15 @@ const styles = StyleSheet.create({
   },
   approvalIcon: {
     fontSize: 32,
+    marginRight: 12,
+  },
+  approvalIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FF6B6B20',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
   approvalInfo: {

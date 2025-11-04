@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 
 // Datos de ejemplo - En producción vendrían del estado global
@@ -134,7 +135,7 @@ export default function ManageProjectsScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Text style={styles.backIcon}>‹</Text>
+            <Ionicons name="chevron-back" size={24} color={COLORS.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Gestionar Proyectos</Text>
           <View style={styles.placeholder} />
@@ -152,7 +153,7 @@ export default function ManageProjectsScreen() {
 
           {activeProjects.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyStateIcon}>📁</Text>
+              <Ionicons name="folder-outline" size={64} color={COLORS.textSecondary} />
               <Text style={styles.emptyStateText}>No tienes proyectos activos</Text>
               <Text style={styles.emptyStateSubtext}>Crea uno para organizar tus gastos</Text>
             </View>
@@ -175,19 +176,19 @@ export default function ManageProjectsScreen() {
                     style={styles.projectActionButton}
                     onPress={() => handleEditProject(project)}
                   >
-                    <Text style={styles.projectActionIcon}>✏️</Text>
+                    <Ionicons name="create-outline" size={18} color={COLORS.text} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.projectActionButton}
                     onPress={() => handleArchiveProject(project)}
                   >
-                    <Text style={styles.projectActionIcon}>📦</Text>
+                    <Ionicons name="archive-outline" size={18} color={COLORS.text} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.projectActionButton}
                     onPress={() => handleDeleteProject(project)}
                   >
-                    <Text style={styles.projectActionIcon}>🗑️</Text>
+                    <Ionicons name="trash-outline" size={18} color={COLORS.error} />
                   </TouchableOpacity>
                 </View>
               </View>

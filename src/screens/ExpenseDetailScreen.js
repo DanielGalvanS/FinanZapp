@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 
 // Datos de ejemplo - En producción vendrían como parámetros de navegación
@@ -9,7 +10,7 @@ const EXPENSE_DATA = {
   id: '1',
   name: 'Uber a la oficina',
   amount: 120.50,
-  category: { name: 'Transporte', icon: '🚗', color: '#4ECDC4' },
+  category: { name: 'Transporte', icon: 'car-outline', color: '#4ECDC4' },
   project: { name: 'Personal', id: 'personal' },
   date: '27/10/2025',
   time: '14:30',
@@ -17,13 +18,12 @@ const EXPENSE_DATA = {
   receipt: null, // URL de la foto del ticket
   createdBy: {
     name: 'Leon Fernandez',
-    avatar: '👤',
   },
   createdAt: '27/10/2025 14:35',
   isSharedProject: false,
   comments: [
-    { id: 1, user: 'Juan Pérez', avatar: '👨', text: '¿Esto incluye propina?', time: '14:40' },
-    { id: 2, user: 'Leon Fernandez', avatar: '👤', text: 'Sí, ya incluye propina', time: '14:42' },
+    { id: 1, user: 'Juan Pérez', text: '¿Esto incluye propina?', time: '14:40' },
+    { id: 2, user: 'Leon Fernandez', text: 'Sí, ya incluye propina', time: '14:42' },
   ],
 };
 
@@ -100,11 +100,11 @@ export default function ExpenseDetailScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Text style={styles.backIcon}>‹</Text>
+            <Ionicons name="chevron-back" size={24} color={COLORS.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Detalle del Gasto</Text>
           <TouchableOpacity style={styles.moreButton}>
-            <Text style={styles.moreIcon}>⋯</Text>
+            <Ionicons name="ellipsis-horizontal" size={24} color={COLORS.text} />
           </TouchableOpacity>
         </View>
 
@@ -129,7 +129,7 @@ export default function ExpenseDetailScreen() {
               <Text style={styles.infoLabel}>Categoría</Text>
               <View style={styles.categoryBadge}>
                 <View style={[styles.categoryIcon, { backgroundColor: expense.category.color + '20' }]}>
-                  <Text style={styles.categoryEmoji}>{expense.category.icon}</Text>
+                  <Ionicons name={expense.category.icon} size={18} color={expense.category.color} />
                 </View>
                 <Text style={styles.categoryName}>{expense.category.name}</Text>
               </View>
@@ -165,7 +165,7 @@ export default function ExpenseDetailScreen() {
         ) : (
           <View style={styles.section}>
             <TouchableOpacity style={styles.addReceiptButton}>
-              <Text style={styles.addReceiptIcon}>📷</Text>
+              <Ionicons name="camera-outline" size={24} color={COLORS.textSecondary} />
               <Text style={styles.addReceiptText}>Agregar Comprobante</Text>
             </TouchableOpacity>
           </View>
@@ -217,7 +217,7 @@ export default function ExpenseDetailScreen() {
                 onPress={handleAddComment}
                 disabled={!commentText.trim()}
               >
-                <Text style={styles.sendIcon}>➤</Text>
+                <Ionicons name="send" size={18} color={COLORS.black} />
               </TouchableOpacity>
             </View>
           </View>
@@ -226,22 +226,22 @@ export default function ExpenseDetailScreen() {
         {/* Actions */}
         <View style={styles.actionsSection}>
           <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
-            <Text style={styles.actionIcon}>✏️</Text>
+            <Ionicons name="create-outline" size={20} color={COLORS.text} />
             <Text style={styles.actionLabel}>Editar</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={handleDuplicate}>
-            <Text style={styles.actionIcon}>📋</Text>
+            <Ionicons name="copy-outline" size={20} color={COLORS.text} />
             <Text style={styles.actionLabel}>Duplicar</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-            <Text style={styles.actionIcon}>↗️</Text>
+            <Ionicons name="share-outline" size={20} color={COLORS.text} />
             <Text style={styles.actionLabel}>Compartir</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.actionButton, styles.actionButtonDanger]} onPress={handleDelete}>
-            <Text style={styles.actionIcon}>🗑️</Text>
+            <Ionicons name="trash-outline" size={20} color={COLORS.error} />
             <Text style={[styles.actionLabel, styles.actionLabelDanger]}>Eliminar</Text>
           </TouchableOpacity>
         </View>

@@ -2,16 +2,17 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import DatePickerInput from '../components/forms/DatePickerInput';
 
 const CATEGORIES = [
-  { id: 1, name: 'Comida', icon: '🍔', color: '#FF6B6B' },
-  { id: 2, name: 'Transporte', icon: '🚗', color: '#4ECDC4' },
-  { id: 3, name: 'Entretenimiento', icon: '🎮', color: '#95E1D3' },
-  { id: 4, name: 'Compras', icon: '🛍️', color: '#F38181' },
-  { id: 5, name: 'Salud', icon: '⚕️', color: '#A8E6CF' },
-  { id: 6, name: 'Educación', icon: '📚', color: '#FFD3B6' },
+  { id: 1, name: 'Comida', icon: 'restaurant-outline', color: '#FF6B6B' },
+  { id: 2, name: 'Transporte', icon: 'car-outline', color: '#4ECDC4' },
+  { id: 3, name: 'Entretenimiento', icon: 'game-controller-outline', color: '#95E1D3' },
+  { id: 4, name: 'Compras', icon: 'cart-outline', color: '#F38181' },
+  { id: 5, name: 'Salud', icon: 'medkit-outline', color: '#A8E6CF' },
+  { id: 6, name: 'Educación', icon: 'book-outline', color: '#FFD3B6' },
 ];
 
 const PROJECTS = [
@@ -25,7 +26,7 @@ const PROJECTS = [
 const EXPENSE_TO_EDIT = {
   id: '1',
   amount: '120.50',
-  category: { id: 2, name: 'Transporte', icon: '🚗', color: '#4ECDC4' },
+  category: { id: 2, name: 'Transporte', icon: 'car-outline', color: '#4ECDC4' },
   project: { id: 1, name: 'Personal' },
   description: 'Viaje del hogar a la oficina en la mañana',
   date: '27/10/2025',
@@ -101,7 +102,7 @@ export default function EditExpenseScreen() {
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={handleCancel} style={styles.backButton}>
-              <Text style={styles.backIcon}>✕</Text>
+              <Ionicons name="close" size={24} color={COLORS.text} />
             </TouchableOpacity>
             <Text style={styles.title}>Editar Gasto</Text>
             <View style={styles.placeholder} />
@@ -146,7 +147,11 @@ export default function EditExpenseScreen() {
                       selectedCategory?.id === category.id && { backgroundColor: category.color },
                     ]}
                   >
-                    <Text style={styles.categoryIcon}>{category.icon}</Text>
+                    <Ionicons
+                      name={category.icon}
+                      size={24}
+                      color={selectedCategory?.id === category.id ? COLORS.white : category.color}
+                    />
                   </View>
                   <Text
                     style={[
@@ -269,11 +274,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backIcon: {
-    fontSize: 20,
-    color: COLORS.text,
-    fontWeight: '600',
-  },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -355,9 +355,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
-  },
-  categoryIcon: {
-    fontSize: 24,
   },
   categoryName: {
     fontSize: 13,

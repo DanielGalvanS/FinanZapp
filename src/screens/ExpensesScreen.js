@@ -2,19 +2,20 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 
 const FILTER_OPTIONS = ['Todo', 'Comida', 'Transporte', 'Entretenimiento', 'Compras'];
 
 const TRANSACTIONS_DATA = [
-  { id: 1, name: 'Uber', category: 'Transporte', amount: -120, date: '27/10/2025', time: '14:30', icon: '🚗', project: 'Personal' },
-  { id: 2, name: 'Oxxo', category: 'Comida', amount: -85.50, date: '27/10/2025', time: '12:15', icon: '🍔', project: 'Personal' },
-  { id: 3, name: 'Netflix', category: 'Entretenimiento', amount: -199, date: '26/10/2025', time: '08:00', icon: '🎮', project: 'Personal' },
-  { id: 4, name: 'Amazon', category: 'Compras', amount: -1250, date: '26/10/2025', time: '16:45', icon: '🛍️', project: 'Personal' },
-  { id: 5, name: 'Starbucks', category: 'Comida', amount: -145, date: '25/10/2025', time: '09:30', icon: '🍔', project: 'Personal' },
-  { id: 6, name: 'Gasolina', category: 'Transporte', amount: -800, date: '24/10/2025', time: '18:00', icon: '🚗', project: 'Personal' },
-  { id: 7, name: 'Restaurante', category: 'Comida', amount: -450, date: '23/10/2025', time: '20:30', icon: '🍔', project: 'Personal' },
-  { id: 8, name: 'Cine', category: 'Entretenimiento', amount: -280, date: '22/10/2025', time: '19:00', icon: '🎮', project: 'Personal' },
+  { id: 1, name: 'Uber', category: 'Transporte', amount: -120, date: '27/10/2025', time: '14:30', icon: 'car-outline', color: '#4ECDC4', project: 'Personal' },
+  { id: 2, name: 'Oxxo', category: 'Comida', amount: -85.50, date: '27/10/2025', time: '12:15', icon: 'restaurant-outline', color: '#FF6B6B', project: 'Personal' },
+  { id: 3, name: 'Netflix', category: 'Entretenimiento', amount: -199, date: '26/10/2025', time: '08:00', icon: 'game-controller-outline', color: '#95E1D3', project: 'Personal' },
+  { id: 4, name: 'Amazon', category: 'Compras', amount: -1250, date: '26/10/2025', time: '16:45', icon: 'cart-outline', color: '#F38181', project: 'Personal' },
+  { id: 5, name: 'Starbucks', category: 'Comida', amount: -145, date: '25/10/2025', time: '09:30', icon: 'restaurant-outline', color: '#FF6B6B', project: 'Personal' },
+  { id: 6, name: 'Gasolina', category: 'Transporte', amount: -800, date: '24/10/2025', time: '18:00', icon: 'car-outline', color: '#4ECDC4', project: 'Personal' },
+  { id: 7, name: 'Restaurante', category: 'Comida', amount: -450, date: '23/10/2025', time: '20:30', icon: 'restaurant-outline', color: '#FF6B6B', project: 'Personal' },
+  { id: 8, name: 'Cine', category: 'Entretenimiento', amount: -280, date: '22/10/2025', time: '19:00', icon: 'game-controller-outline', color: '#95E1D3', project: 'Personal' },
 ];
 
 export default function ExpensesScreen() {
@@ -48,7 +49,7 @@ export default function ExpensesScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Gastos</Text>
           <TouchableOpacity style={styles.exportButton}>
-            <Text style={styles.exportIcon}>📊</Text>
+            <Ionicons name="bar-chart-outline" size={20} color={COLORS.black} />
           </TouchableOpacity>
         </View>
 
@@ -71,7 +72,7 @@ export default function ExpensesScreen() {
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Text style={styles.searchIcon}>🔍</Text>
+          <Ionicons name="search-outline" size={18} color={COLORS.textSecondary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Buscar transacciones..."
@@ -81,7 +82,7 @@ export default function ExpensesScreen() {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Text style={styles.clearIcon}>✕</Text>
+              <Ionicons name="close-circle" size={18} color={COLORS.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -134,8 +135,8 @@ export default function ExpensesScreen() {
               onPress={() => handleTransactionPress(transaction.id)}
             >
               <View style={styles.transactionLeft}>
-                <View style={styles.transactionIcon}>
-                  <Text style={styles.transactionEmoji}>{transaction.icon}</Text>
+                <View style={[styles.transactionIcon, { backgroundColor: transaction.color + '20' }]}>
+                  <Ionicons name={transaction.icon} size={22} color={transaction.color} />
                 </View>
                 <View style={styles.transactionInfo}>
                   <Text style={styles.transactionName}>{transaction.name}</Text>
@@ -327,7 +328,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: COLORS.gray100,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,

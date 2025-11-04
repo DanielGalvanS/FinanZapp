@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import DatePickerInput from '../components/forms/DatePickerInput';
 
 const CATEGORIES = [
-  { id: 1, name: 'Comida', icon: '🍔', color: '#FF6B6B' },
-  { id: 2, name: 'Transporte', icon: '🚗', color: '#4ECDC4' },
-  { id: 3, name: 'Entretenimiento', icon: '🎮', color: '#95E1D3' },
-  { id: 4, name: 'Compras', icon: '🛍️', color: '#F38181' },
-  { id: 5, name: 'Salud', icon: '⚕️', color: '#A8E6CF' },
-  { id: 6, name: 'Educación', icon: '📚', color: '#FFD3B6' },
+  { id: 1, name: 'Comida', icon: 'restaurant-outline', color: '#FF6B6B' },
+  { id: 2, name: 'Transporte', icon: 'car-outline', color: '#4ECDC4' },
+  { id: 3, name: 'Entretenimiento', icon: 'game-controller-outline', color: '#95E1D3' },
+  { id: 4, name: 'Compras', icon: 'cart-outline', color: '#F38181' },
+  { id: 5, name: 'Salud', icon: 'medkit-outline', color: '#A8E6CF' },
+  { id: 6, name: 'Educación', icon: 'book-outline', color: '#FFD3B6' },
 ];
 
 const PROJECTS = [
@@ -62,7 +63,7 @@ export default function AddExpenseScreen() {
           <View style={styles.header}>
             <Text style={styles.title}>Nuevo Gasto</Text>
             <TouchableOpacity style={styles.scanButton}>
-              <Text style={styles.scanIcon}>📸</Text>
+              <Ionicons name="camera-outline" size={24} color={COLORS.black} />
             </TouchableOpacity>
           </View>
 
@@ -105,7 +106,11 @@ export default function AddExpenseScreen() {
                       selectedCategory?.id === category.id && { backgroundColor: category.color },
                     ]}
                   >
-                    <Text style={styles.categoryIcon}>{category.icon}</Text>
+                    <Ionicons
+                      name={category.icon}
+                      size={24}
+                      color={selectedCategory?.id === category.id ? COLORS.white : category.color}
+                    />
                   </View>
                   <Text
                     style={[
@@ -223,9 +228,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  scanIcon: {
-    fontSize: 24,
-  },
   amountSection: {
     alignItems: 'center',
     paddingVertical: 32,
@@ -299,9 +301,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
-  },
-  categoryIcon: {
-    fontSize: 24,
   },
   categoryName: {
     fontSize: 13,

@@ -2,20 +2,20 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 
 // Datos de ejemplo
 const USER_DATA = {
   name: 'Leon Fernandez',
   email: 'leon@finanzapp.com',
-  avatar: '👤',
 };
 
 const MENU_SECTIONS = [
   {
     id: 'personal',
     title: 'Información Personal',
-    icon: '👤',
+    icon: 'person-circle-outline',
     items: [
       { id: 'name', label: 'Nombre', value: 'Leon Fernandez', action: 'edit' },
       { id: 'email', label: 'Email', value: 'leon@finanzapp.com', action: 'view' },
@@ -25,7 +25,7 @@ const MENU_SECTIONS = [
   {
     id: 'security',
     title: 'Seguridad',
-    icon: '🔐',
+    icon: 'shield-checkmark-outline',
     items: [
       { id: 'password', label: 'Cambiar Contraseña', action: 'navigate' },
       { id: '2fa', label: 'Autenticación 2FA', action: 'toggle', value: false },
@@ -35,7 +35,7 @@ const MENU_SECTIONS = [
   {
     id: 'notifications',
     title: 'Notificaciones',
-    icon: '🔔',
+    icon: 'notifications-outline',
     items: [
       { id: 'push', label: 'Notificaciones Push', action: 'toggle', value: true },
       { id: 'email', label: 'Notificaciones Email', action: 'toggle', value: true },
@@ -45,16 +45,16 @@ const MENU_SECTIONS = [
   {
     id: 'appearance',
     title: 'Apariencia',
-    icon: '🎨',
+    icon: 'color-palette-outline',
     items: [
       { id: 'theme', label: 'Tema', value: 'Claro', action: 'navigate' },
-      { id: 'accent', label: 'Color de Acento', value: '🟢', action: 'navigate' },
+      { id: 'accent', label: 'Color de Acento', value: '#C8FF00', action: 'navigate' },
     ],
   },
   {
     id: 'region',
     title: 'Región',
-    icon: '🌐',
+    icon: 'globe-outline',
     items: [
       { id: 'language', label: 'Idioma', value: 'Español', action: 'navigate' },
       { id: 'currency', label: 'Moneda', value: 'MXN', action: 'navigate' },
@@ -65,7 +65,7 @@ const MENU_SECTIONS = [
   {
     id: 'projects',
     title: 'Proyectos',
-    icon: '📁',
+    icon: 'folder-outline',
     items: [
       { id: 'projects-manage', label: 'Gestionar Proyectos', subtitle: '3 proyectos activos', action: 'navigate' },
       { id: 'categories-manage', label: 'Gestionar Categorías', subtitle: '6 categorías', action: 'navigate' },
@@ -74,7 +74,7 @@ const MENU_SECTIONS = [
   {
     id: 'invitations',
     title: 'Invitaciones',
-    icon: '👥',
+    icon: 'people-outline',
     items: [
       { id: 'pending', label: 'Pendientes de Aceptar', badge: '2', action: 'navigate' },
       { id: 'shared', label: 'Proyectos Compartidos', subtitle: '5 proyectos', action: 'navigate' },
@@ -83,7 +83,7 @@ const MENU_SECTIONS = [
   {
     id: 'data',
     title: 'Data & Privacidad',
-    icon: '💾',
+    icon: 'server-outline',
     items: [
       { id: 'export', label: 'Exportar Datos', action: 'navigate' },
       { id: 'backup', label: 'Backup Automático', action: 'toggle', value: true },
@@ -94,7 +94,7 @@ const MENU_SECTIONS = [
   {
     id: 'help',
     title: 'Ayuda & Soporte',
-    icon: '❓',
+    icon: 'help-circle-outline',
     items: [
       { id: 'tutorial', label: 'Ver Tutorial', action: 'navigate' },
       { id: 'faq', label: 'Preguntas Frecuentes', action: 'navigate' },
@@ -197,7 +197,7 @@ export default function ProfileScreen() {
         {/* User Info Card */}
         <View style={styles.userCard}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>{USER_DATA.avatar}</Text>
+            <Ionicons name="person" size={32} color={COLORS.black} />
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{USER_DATA.name}</Text>
@@ -212,7 +212,7 @@ export default function ProfileScreen() {
         {MENU_SECTIONS.map((section, sectionIndex) => (
           <View key={section.id} style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionIcon}>{section.icon}</Text>
+              <Ionicons name={section.icon} size={20} color={COLORS.textSecondary} />
               <Text style={styles.sectionTitle}>{section.title}</Text>
             </View>
             <View style={styles.menuCard}>
@@ -229,7 +229,7 @@ export default function ProfileScreen() {
           onPress={handleLogout}
           activeOpacity={0.7}
         >
-          <Text style={styles.logoutIcon}>🚪</Text>
+          <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
           <Text style={styles.logoutText}>Cerrar Sesión</Text>
         </TouchableOpacity>
 
@@ -281,9 +281,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 16,
   },
-  avatarText: {
-    fontSize: 32,
-  },
   userInfo: {
     flex: 1,
   },
@@ -316,10 +313,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     marginBottom: 12,
-  },
-  sectionIcon: {
-    fontSize: 20,
-    marginRight: 8,
+    gap: 8,
   },
   sectionTitle: {
     fontSize: 16,
@@ -403,10 +397,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 2,
     borderColor: COLORS.error,
-  },
-  logoutIcon: {
-    fontSize: 20,
-    marginRight: 8,
+    gap: 8,
   },
   logoutText: {
     fontSize: 16,
