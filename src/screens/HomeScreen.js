@@ -44,9 +44,29 @@ const QUICK_ACTIONS = [
   { id: 'cards', label: 'Tarjetas', icon: 'card-outline', route: '/cards' },
 ];
 
+// Datos de proyectos (ejemplo)
+const CURRENT_PROJECT = {
+  id: 1,
+  name: 'Personal',
+  isShared: false,
+  collaborators: [],
+};
+
+const SHARED_PROJECT_EXAMPLE = {
+  id: 2,
+  name: 'Renta Depa',
+  isShared: true,
+  collaborators: [
+    { id: 1, name: 'María García', avatar: null },
+    { id: 2, name: 'Juan Pérez', avatar: null },
+    { id: 3, name: 'Ana López', avatar: null },
+  ],
+};
+
 export default function HomeScreen() {
   const router = useRouter();
   const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const [currentProject, setCurrentProject] = useState(SHARED_PROJECT_EXAMPLE);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('es-MX', {
@@ -69,6 +89,10 @@ export default function HomeScreen() {
     router.push('/expenses');
   };
 
+  const handleProjectPress = () => {
+    router.push('/manage-projects');
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
@@ -76,6 +100,52 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        {/* Project Selector */}
+        <TouchableOpacity
+          style={styles.projectSelector}
+          onPress={handleProjectPress}
+          activeOpacity={0.7}
+        >
+          <View style={styles.projectInfo}>
+            <View style={styles.projectHeader}>
+              <Ionicons
+                name={currentProject.isShared ? "people" : "folder-outline"}
+                size={ICON_SIZE.sm}
+                color={COLORS.textSecondary}
+              />
+              <Text style={[TYPOGRAPHY.caption, styles.projectLabel]}>
+                {currentProject.isShared ? 'Proyecto Compartido' : 'Proyecto Personal'}
+              </Text>
+            </View>
+            <Text style={[TYPOGRAPHY.bodyBold, styles.projectName]}>
+              {currentProject.name}
+            </Text>
+            {currentProject.isShared && currentProject.collaborators.length > 0 && (
+              <View style={styles.collaboratorsContainer}>
+                <View style={styles.avatarGroup}>
+                  {currentProject.collaborators.slice(0, 3).map((collab, index) => (
+                    <View
+                      key={collab.id}
+                      style={[
+                        styles.avatarCircle,
+                        { marginLeft: index > 0 ? -8 : 0, zIndex: 3 - index }
+                      ]}
+                    >
+                      <Text style={styles.avatarText}>
+                        {collab.name.charAt(0)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+                <Text style={[TYPOGRAPHY.caption, styles.collaboratorCount]}>
+                  {currentProject.collaborators.length} colaborador{currentProject.collaborators.length > 1 ? 'es' : ''}
+                </Text>
+              </View>
+            )}
+          </View>
+          <Ionicons name="chevron-forward" size={ICON_SIZE.sm} color={COLORS.textSecondary} />
+        </TouchableOpacity>
+
         {/* Header */}
         <View style={styles.header}>
           <View>
@@ -266,6 +336,66 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: SPACING.xxxl,
+  },
+  projectSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.lg,
+    marginHorizontal: SPACING.xl,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.lg,
+    backgroundColor: COLORS.backgroundSecondary,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  projectInfo: {
+    flex: 1,
+  },
+  projectHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    marginBottom: SPACING.xs,
+  },
+  projectLabel: {
+    color: COLORS.textSecondary,
+    fontWeight: '500',
+  },
+  projectName: {
+    fontSize: 18,
+    marginBottom: SPACING.sm,
+  },
+  collaboratorsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginTop: SPACING.xs,
+  },
+  avatarGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatarCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: RADIUS.round,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.backgroundSecondary,
+  },
+  avatarText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: COLORS.white,
+  },
+  collaboratorCount: {
+    color: COLORS.textSecondary,
+    fontWeight: '500',
   },
   header: {
     flexDirection: 'row',

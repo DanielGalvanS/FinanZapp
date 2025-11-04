@@ -404,14 +404,14 @@ const styles = StyleSheet.create({
   },
   createButtonIcon: {
     fontSize: 24,
-    color: COLORS.black,
+    color: COLORS.background,
     marginRight: 8,
     fontWeight: 'bold',
   },
   createButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: COLORS.black,
+    color: COLORS.background,
   },
   section: {
     paddingHorizontal: 20,
