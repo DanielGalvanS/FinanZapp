@@ -45,28 +45,48 @@ const QUICK_ACTIONS = [
 ];
 
 // Datos de proyectos (ejemplo)
-const CURRENT_PROJECT = {
-  id: 1,
-  name: 'Personal',
-  isShared: false,
-  collaborators: [],
-};
-
-const SHARED_PROJECT_EXAMPLE = {
-  id: 2,
-  name: 'Renta Depa',
-  isShared: true,
-  collaborators: [
-    { id: 1, name: 'María García', avatar: null },
-    { id: 2, name: 'Juan Pérez', avatar: null },
-    { id: 3, name: 'Ana López', avatar: null },
-  ],
-};
+const AVAILABLE_PROJECTS = [
+  {
+    id: 1,
+    name: 'Personal',
+    isShared: false,
+    collaborators: [],
+    totalExpenses: 42330,
+  },
+  {
+    id: 2,
+    name: 'Renta Depa',
+    isShared: true,
+    collaborators: [
+      { id: 1, name: 'María García', avatar: null },
+      { id: 2, name: 'Juan Pérez', avatar: null },
+      { id: 3, name: 'Ana López', avatar: null },
+    ],
+    totalExpenses: 18500,
+  },
+  {
+    id: 3,
+    name: 'Negocio',
+    isShared: true,
+    collaborators: [
+      { id: 4, name: 'Carlos Ruiz', avatar: null },
+    ],
+    totalExpenses: 156780,
+  },
+  {
+    id: 4,
+    name: 'Vacaciones',
+    isShared: false,
+    collaborators: [],
+    totalExpenses: 8920,
+  },
+];
 
 export default function HomeScreen() {
   const router = useRouter();
   const [selectedPeriod, setSelectedPeriod] = useState('month');
-  const [currentProject, setCurrentProject] = useState(SHARED_PROJECT_EXAMPLE);
+  const [currentProject, setCurrentProject] = useState(AVAILABLE_PROJECTS[1]);
+  const [isProjectSelectorExpanded, setIsProjectSelectorExpanded] = useState(false);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('es-MX', {
@@ -90,6 +110,15 @@ export default function HomeScreen() {
   };
 
   const handleProjectPress = () => {
+    setIsProjectSelectorExpanded(!isProjectSelectorExpanded);
+  };
+
+  const handleSelectProject = (project) => {
+    setCurrentProject(project);
+    setIsProjectSelectorExpanded(false);
+  };
+
+  const handleManageProjects = () => {
     router.push('/manage-projects');
   };
 
@@ -101,50 +130,102 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Project Selector */}
-        <TouchableOpacity
-          style={styles.projectSelector}
-          onPress={handleProjectPress}
-          activeOpacity={0.7}
-        >
-          <View style={styles.projectInfo}>
-            <View style={styles.projectHeader}>
-              <Ionicons
-                name={currentProject.isShared ? "people" : "folder-outline"}
-                size={ICON_SIZE.sm}
-                color={COLORS.textSecondary}
-              />
-              <Text style={[TYPOGRAPHY.caption, styles.projectLabel]}>
-                {currentProject.isShared ? 'Proyecto Compartido' : 'Proyecto Personal'}
-              </Text>
-            </View>
-            <Text style={[TYPOGRAPHY.bodyBold, styles.projectName]}>
-              {currentProject.name}
-            </Text>
-            {currentProject.isShared && currentProject.collaborators.length > 0 && (
-              <View style={styles.collaboratorsContainer}>
-                <View style={styles.avatarGroup}>
-                  {currentProject.collaborators.slice(0, 3).map((collab, index) => (
-                    <View
-                      key={collab.id}
-                      style={[
-                        styles.avatarCircle,
-                        { marginLeft: index > 0 ? -8 : 0, zIndex: 3 - index }
-                      ]}
-                    >
-                      <Text style={styles.avatarText}>
-                        {collab.name.charAt(0)}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-                <Text style={[TYPOGRAPHY.caption, styles.collaboratorCount]}>
-                  {currentProject.collaborators.length} colaborador{currentProject.collaborators.length > 1 ? 'es' : ''}
+        <View style={styles.projectSelectorWrapper}>
+          <TouchableOpacity
+            style={styles.projectSelector}
+            onPress={handleProjectPress}
+            activeOpacity={0.7}
+          >
+            <View style={styles.projectInfo}>
+              <View style={styles.projectHeader}>
+                <Ionicons
+                  name={currentProject.isShared ? "people" : "folder-outline"}
+                  size={ICON_SIZE.sm}
+                  color={COLORS.textSecondary}
+                />
+                <Text style={[TYPOGRAPHY.caption, styles.projectLabel]}>
+                  {currentProject.isShared ? 'Proyecto Compartido' : 'Proyecto Personal'}
                 </Text>
               </View>
-            )}
-          </View>
-          <Ionicons name="chevron-forward" size={ICON_SIZE.sm} color={COLORS.textSecondary} />
-        </TouchableOpacity>
+              <Text style={[TYPOGRAPHY.bodyBold, styles.projectName]}>
+                {currentProject.name}
+              </Text>
+              {currentProject.isShared && currentProject.collaborators.length > 0 && (
+                <View style={styles.collaboratorsContainer}>
+                  <View style={styles.avatarGroup}>
+                    {currentProject.collaborators.slice(0, 3).map((collab, index) => (
+                      <View
+                        key={collab.id}
+                        style={[
+                          styles.avatarCircle,
+                          { marginLeft: index > 0 ? -8 : 0, zIndex: 3 - index }
+                        ]}
+                      >
+                        <Text style={styles.avatarText}>
+                          {collab.name.charAt(0)}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                  <Text style={[TYPOGRAPHY.caption, styles.collaboratorCount]}>
+                    {currentProject.collaborators.length} colaborador{currentProject.collaborators.length > 1 ? 'es' : ''}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Ionicons
+              name={isProjectSelectorExpanded ? "chevron-up" : "chevron-down"}
+              size={ICON_SIZE.sm}
+              color={COLORS.textSecondary}
+            />
+          </TouchableOpacity>
+
+          {/* Expanded Projects List */}
+          {isProjectSelectorExpanded && (
+            <View style={styles.projectsList}>
+              {AVAILABLE_PROJECTS.filter(p => p.id !== currentProject.id).map((project) => (
+                <TouchableOpacity
+                  key={project.id}
+                  style={styles.projectItem}
+                  onPress={() => handleSelectProject(project)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.projectItemIcon}>
+                    <Ionicons
+                      name={project.isShared ? "people" : "folder-outline"}
+                      size={ICON_SIZE.md}
+                      color={COLORS.text}
+                    />
+                  </View>
+                  <View style={styles.projectItemInfo}>
+                    <Text style={[TYPOGRAPHY.bodyBold, styles.projectItemName]}>
+                      {project.name}
+                    </Text>
+                    <Text style={[TYPOGRAPHY.caption, styles.projectItemMeta]}>
+                      {project.isShared && project.collaborators.length > 0
+                        ? `${project.collaborators.length} colaborador${project.collaborators.length > 1 ? 'es' : ''}`
+                        : 'Personal'
+                      }
+                    </Text>
+                  </View>
+                  <Ionicons name="ellipsis-horizontal" size={ICON_SIZE.sm} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              ))}
+
+              {/* Manage Projects Button */}
+              <TouchableOpacity
+                style={styles.manageProjectsButton}
+                onPress={handleManageProjects}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="settings-outline" size={ICON_SIZE.sm} color={COLORS.text} />
+                <Text style={[TYPOGRAPHY.bodyBold, styles.manageProjectsText]}>
+                  Gestionar Proyectos
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
 
         {/* Header */}
         <View style={styles.header}>
@@ -337,15 +418,17 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: SPACING.xxxl,
   },
+  projectSelectorWrapper: {
+    marginHorizontal: SPACING.xl,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.lg,
+  },
   projectSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.lg,
-    marginHorizontal: SPACING.xl,
-    marginTop: SPACING.sm,
-    marginBottom: SPACING.lg,
+    paddingVertical: SPACING.md,
     backgroundColor: COLORS.backgroundSecondary,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
@@ -367,6 +450,8 @@ const styles = StyleSheet.create({
   projectName: {
     fontSize: 18,
     marginBottom: SPACING.sm,
+
+    alignSelf: 'stretch'
   },
   collaboratorsContainer: {
     flexDirection: 'row',
@@ -396,6 +481,51 @@ const styles = StyleSheet.create({
   collaboratorCount: {
     color: COLORS.textSecondary,
     fontWeight: '500',
+  },
+  projectsList: {
+    marginTop: SPACING.sm,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  projectItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  projectItemIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.md,
+  },
+  projectItemInfo: {
+    flex: 1,
+  },
+  projectItemName: {
+    marginBottom: 2,
+  },
+  projectItemMeta: {
+    color: COLORS.textSecondary,
+  },
+  manageProjectsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.lg,
+    gap: SPACING.sm,
+    backgroundColor: COLORS.backgroundSecondary,
+  },
+  manageProjectsText: {
+    color: COLORS.text,
   },
   header: {
     flexDirection: 'row',
