@@ -14,6 +14,7 @@ import {
 import DatePickerInput from '../components/forms/DatePickerInput';
 import { Header, Input } from '../components/ui';
 import { formatCurrency } from '../utils/formatters';
+import { ReceiptGallery, ReceiptViewer } from '../components/receipts';
 
 const CATEGORIES = [
   { id: 1, name: 'Comida', icon: 'restaurant-outline', color: COLORS.categoryFood },
@@ -37,6 +38,8 @@ export default function AddExpenseScreen() {
   const [selectedProject, setSelectedProject] = useState(PROJECTS[0]);
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toLocaleDateString('es-MX'));
+  const [receipts, setReceipts] = useState([]);
+  const [viewingReceipt, setViewingReceipt] = useState(null);
 
   const handleAmountChange = (text) => {
     const numericValue = text.replace(/[^0-9.]/g, '');
@@ -77,6 +80,34 @@ export default function AddExpenseScreen() {
 
   const handleScanReceipt = () => {
     Alert.alert('Escanear Comprobante', 'Funcionalidad de OCR próximamente');
+  };
+
+  const handleAddReceipt = (uri) => {
+    const newReceipt = {
+      id: Date.now().toString(),
+      uri,
+      createdAt: new Date().toISOString(),
+    };
+    setReceipts(prev => [...prev, newReceipt]);
+  };
+
+  const handleRemoveReceipt = (receipt, index) => {
+    Alert.alert(
+      'Eliminar Recibo',
+      '¿Estás seguro de que deseas eliminar este recibo?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => setReceipts(prev => prev.filter((_, i) => i !== index)),
+        },
+      ]
+    );
+  };
+
+  const handleViewReceipt = (receipt) => {
+    setViewingReceipt(receipt);
   };
 
   return (
@@ -200,6 +231,17 @@ export default function AddExpenseScreen() {
             />
           </View>
 
+          {/* Receipts */}
+          <View style={styles.section}>
+            <ReceiptGallery
+              receipts={receipts}
+              onAddReceipt={handleAddReceipt}
+              onRemoveReceipt={handleRemoveReceipt}
+              onViewReceipt={handleViewReceipt}
+              label="Recibos (opcional)"
+            />
+          </View>
+
           {/* Date */}
           <View style={styles.section}>
             <DatePickerInput
@@ -229,6 +271,19 @@ export default function AddExpenseScreen() {
           <View style={styles.bottomPadding} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Receipt Viewer Modal */}
+      <ReceiptViewer
+        visible={!!viewingReceipt}
+        receipt={viewingReceipt}
+        onClose={() => setViewingReceipt(null)}
+        onDelete={(receipt) => {
+          const index = receipts.findIndex(r => r.id === receipt.id);
+          if (index !== -1) {
+            setReceipts(prev => prev.filter((_, i) => i !== index));
+          }
+        }}
+      />
     </SafeAreaView>
   );
 }

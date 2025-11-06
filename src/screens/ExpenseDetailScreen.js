@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import { formatCurrency } from '../utils/formatters';
+import { ReceiptGallery, ReceiptViewer } from '../components/receipts';
+import { CommentInput } from '../components/comments';
 
 // Datos de ejemplo - En producción vendrían como parámetros de navegación
 const EXPENSE_DATA = {
@@ -12,26 +14,42 @@ const EXPENSE_DATA = {
   name: 'Uber a la oficina',
   amount: 120.50,
   category: { name: 'Transporte', icon: 'car-outline', color: '#4ECDC4' },
-  project: { name: 'Personal', id: 'personal' },
+  project: { name: 'Renta Depa', id: 'renta-depa' },
   date: '27/10/2025',
   time: '14:30',
   description: 'Viaje del hogar a la oficina en la mañana. Tráfico pesado en Insurgentes.',
-  receipt: null, // URL de la foto del ticket
+  receipts: [],
   createdBy: {
+    id: '1',
     name: 'Leon Fernandez',
   },
   createdAt: '27/10/2025 14:35',
-  isSharedProject: false,
+  isSharedProject: true,
   comments: [
-    { id: 1, user: 'Juan Pérez', text: '¿Esto incluye propina?', time: '14:40' },
-    { id: 2, user: 'Leon Fernandez', text: 'Sí, ya incluye propina', time: '14:42' },
+    {
+      id: 1,
+      user: { id: '2', name: 'Juan Pérez', avatar: null },
+      userId: '2',
+      text: '¿Esto incluye propina?',
+      time: '14:40',
+      createdAt: '2025-10-27T14:40:00',
+    },
+    {
+      id: 2,
+      user: { id: '1', name: 'Leon Fernandez', avatar: null },
+      userId: '1',
+      text: 'Sí, ya incluye propina',
+      time: '14:42',
+      createdAt: '2025-10-27T14:42:00',
+    },
   ],
 };
 
 export default function ExpenseDetailScreen() {
   const router = useRouter();
-  const [commentText, setCommentText] = useState('');
   const [expense, setExpense] = useState(EXPENSE_DATA);
+  const [viewingReceipt, setViewingReceipt] = useState(null);
+  const [mentionUser, setMentionUser] = useState(null);
 
   const handleBack = () => {
     router.back();
@@ -70,27 +88,90 @@ export default function ExpenseDetailScreen() {
     Alert.alert('Compartir', 'Funcionalidad de compartir');
   };
 
-  const handleAddComment = () => {
-    if (!commentText.trim()) return;
-
+  const handleSendComment = (text) => {
     const newComment = {
-      id: expense.comments.length + 1,
-      user: 'Leon Fernandez',
-      avatar: '👤',
-      text: commentText,
+      id: Date.now(),
+      user: { id: '1', name: 'Leon Fernandez', avatar: null },
+      userId: '1',
+      text: mentionUser ? `@${mentionUser.name} ${text}` : text,
       time: new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+      createdAt: new Date().toISOString(),
     };
 
     setExpense(prev => ({
       ...prev,
       comments: [...prev.comments, newComment],
     }));
-    setCommentText('');
+    setMentionUser(null);
+  };
+
+  const handleDeleteComment = (comment) => {
+    Alert.alert(
+      'Eliminar Comentario',
+      '¿Estás seguro de que deseas eliminar este comentario?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => {
+            setExpense(prev => ({
+              ...prev,
+              comments: prev.comments.filter(c => c.id !== comment.id),
+            }));
+          },
+        },
+      ]
+    );
+  };
+
+  const handleMentionUser = (user) => {
+    setMentionUser(user);
+  };
+
+  const handleAddReceipt = (uri) => {
+    const newReceipt = {
+      id: Date.now().toString(),
+      uri,
+      createdAt: new Date().toISOString(),
+    };
+    setExpense(prev => ({
+      ...prev,
+      receipts: [...prev.receipts, newReceipt],
+    }));
+  };
+
+  const handleRemoveReceipt = (receipt, index) => {
+    Alert.alert(
+      'Eliminar Recibo',
+      '¿Estás seguro de que deseas eliminar este recibo?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => {
+            setExpense(prev => ({
+              ...prev,
+              receipts: prev.receipts.filter((_, i) => i !== index),
+            }));
+          },
+        },
+      ]
+    );
+  };
+
+  const handleViewReceipt = (receipt) => {
+    setViewingReceipt(receipt);
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
@@ -148,22 +229,17 @@ export default function ExpenseDetailScreen() {
           </View>
         </View>
 
-        {/* Receipt Photo */}
-        {expense.receipt ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Comprobante</Text>
-            <TouchableOpacity style={styles.receiptCard}>
-              <Image source={{ uri: expense.receipt }} style={styles.receiptImage} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.section}>
-            <TouchableOpacity style={styles.addReceiptButton}>
-              <Ionicons name="camera-outline" size={24} color={COLORS.textSecondary} />
-              <Text style={styles.addReceiptText}>Agregar Comprobante</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* Receipts */}
+        <View style={styles.section}>
+          <ReceiptGallery
+            receipts={expense.receipts}
+            onAddReceipt={handleAddReceipt}
+            onRemoveReceipt={handleRemoveReceipt}
+            onViewReceipt={handleViewReceipt}
+            label="Recibos"
+            editable={true}
+          />
+        </View>
 
         {/* Created By (Solo si es proyecto compartido) */}
         {expense.isSharedProject && (
@@ -183,37 +259,25 @@ export default function ExpenseDetailScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Comentarios ({expense.comments.length})</Text>
 
-          <View style={styles.commentsCard}>
-            {expense.comments.map((comment) => (
-              <View key={comment.id} style={styles.commentItem}>
-                <Text style={styles.commentAvatar}>{comment.avatar}</Text>
-                <View style={styles.commentContent}>
-                  <View style={styles.commentHeader}>
-                    <Text style={styles.commentUser}>{comment.user}</Text>
-                    <Text style={styles.commentTime}>{comment.time}</Text>
-                  </View>
-                  <Text style={styles.commentText}>{comment.text}</Text>
-                </View>
-              </View>
-            ))}
+          <View style={styles.commentsContainer}>
+            {expense.comments.map((comment) => {
+              const CommentItemComponent = require('../components/comments').CommentItem;
+              return (
+                <CommentItemComponent
+                  key={comment.id}
+                  comment={comment}
+                  currentUserId="1"
+                  onDelete={handleDeleteComment}
+                  onMention={handleMentionUser}
+                />
+              );
+            })}
 
-            <View style={styles.commentInputContainer}>
-              <TextInput
-                style={styles.commentInput}
-                placeholder="Agregar un comentario..."
-                placeholderTextColor={COLORS.textSecondary}
-                value={commentText}
-                onChangeText={setCommentText}
-                multiline
-              />
-              <TouchableOpacity
-                style={[styles.sendButton, !commentText.trim() && styles.sendButtonDisabled]}
-                onPress={handleAddComment}
-                disabled={!commentText.trim()}
-              >
-                <Ionicons name="send" size={18} color={COLORS.black} />
-              </TouchableOpacity>
-            </View>
+            {expense.comments.length === 0 && (
+              <Text style={styles.noCommentsText}>
+                No hay comentarios aún. Sé el primero en comentar.
+              </Text>
+            )}
           </View>
         </View>
 
@@ -243,6 +307,32 @@ export default function ExpenseDetailScreen() {
         {/* Bottom padding */}
         <View style={styles.bottomPadding} />
       </ScrollView>
+
+      {/* Comment Input - Fixed at bottom */}
+      {expense.isSharedProject && (
+        <CommentInput
+          onSend={handleSendComment}
+          mentionUser={mentionUser}
+          onClearMention={() => setMentionUser(null)}
+        />
+      )}
+    </KeyboardAvoidingView>
+
+      {/* Receipt Viewer Modal */}
+      <ReceiptViewer
+        visible={!!viewingReceipt}
+        receipt={viewingReceipt}
+        onClose={() => setViewingReceipt(null)}
+        onDelete={(receipt) => {
+          const index = expense.receipts.findIndex(r => r.id === receipt.id);
+          if (index !== -1) {
+            setExpense(prev => ({
+              ...prev,
+              receipts: prev.receipts.filter((_, i) => i !== index),
+            }));
+          }
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -252,8 +342,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  keyboardView: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
+  },
+  commentsContainer: {
+    paddingTop: 8,
+  },
+  noCommentsText: {
+    textAlign: 'center',
+    color: COLORS.textSecondary,
+    paddingVertical: 24,
+    fontStyle: 'italic',
   },
   header: {
     flexDirection: 'row',

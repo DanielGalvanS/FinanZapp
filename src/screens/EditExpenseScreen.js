@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import DatePickerInput from '../components/forms/DatePickerInput';
 import { formatCurrency } from '../utils/formatters';
+import { ReceiptGallery, ReceiptViewer } from '../components/receipts';
 
 const CATEGORIES = [
   { id: 1, name: 'Comida', icon: 'restaurant-outline', color: '#FF6B6B' },
@@ -42,6 +43,8 @@ export default function EditExpenseScreen() {
   const [selectedProject, setSelectedProject] = useState(EXPENSE_TO_EDIT.project);
   const [description, setDescription] = useState(EXPENSE_TO_EDIT.description);
   const [date, setDate] = useState(EXPENSE_TO_EDIT.date);
+  const [receipts, setReceipts] = useState([]);
+  const [viewingReceipt, setViewingReceipt] = useState(null);
 
   const handleAmountChange = (text) => {
     const numericValue = text.replace(/[^0-9.]/g, '');
@@ -83,11 +86,40 @@ export default function EditExpenseScreen() {
       project: selectedProject,
       description,
       date,
+      receipts,
     });
 
     Alert.alert('Éxito', 'Gasto actualizado correctamente', [
       { text: 'OK', onPress: () => router.back() }
     ]);
+  };
+
+  const handleAddReceipt = (uri) => {
+    const newReceipt = {
+      id: Date.now().toString(),
+      uri,
+      createdAt: new Date().toISOString(),
+    };
+    setReceipts(prev => [...prev, newReceipt]);
+  };
+
+  const handleRemoveReceipt = (receipt, index) => {
+    Alert.alert(
+      'Eliminar Recibo',
+      '¿Estás seguro de que deseas eliminar este recibo?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => setReceipts(prev => prev.filter((_, i) => i !== index)),
+        },
+      ]
+    );
+  };
+
+  const handleViewReceipt = (receipt) => {
+    setViewingReceipt(receipt);
   };
 
   return (
@@ -205,6 +237,17 @@ export default function EditExpenseScreen() {
             />
           </View>
 
+          {/* Receipts */}
+          <View style={styles.section}>
+            <ReceiptGallery
+              receipts={receipts}
+              onAddReceipt={handleAddReceipt}
+              onRemoveReceipt={handleRemoveReceipt}
+              onViewReceipt={handleViewReceipt}
+              label="Recibos (opcional)"
+            />
+          </View>
+
           {/* Date */}
           <View style={styles.section}>
             <DatePickerInput
@@ -241,6 +284,19 @@ export default function EditExpenseScreen() {
           <View style={styles.bottomPadding} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Receipt Viewer Modal */}
+      <ReceiptViewer
+        visible={!!viewingReceipt}
+        receipt={viewingReceipt}
+        onClose={() => setViewingReceipt(null)}
+        onDelete={(receipt) => {
+          const index = receipts.findIndex(r => r.id === receipt.id);
+          if (index !== -1) {
+            setReceipts(prev => prev.filter((_, i) => i !== index));
+          }
+        }}
+      />
     </SafeAreaView>
   );
 }
