@@ -9,3 +9,4 @@ export { default as ExpenseDetailScreen } from './ExpenseDetailScreen';
 export { default as CardsScreen } from './CardsScreen';
 export { default as ManageProjectsScreen } from './ManageProjectsScreen';
 export { default as ManageCategoriesScreen } from './ManageCategoriesScreen';
+export { default as CreateProjectScreen } from './CreateProjectScreen';

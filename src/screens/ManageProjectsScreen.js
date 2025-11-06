@@ -235,7 +235,7 @@ export default function ManageProjectsScreen() {
       <Modal
         visible={showModal}
         transparent={true}
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowModal(false)}
       >
         <View style={styles.modalOverlay}>

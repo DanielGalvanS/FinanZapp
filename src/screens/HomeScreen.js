@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Pressable, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -87,6 +87,26 @@ export default function HomeScreen() {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [currentProject, setCurrentProject] = useState(AVAILABLE_PROJECTS[1]);
   const [isProjectSelectorExpanded, setIsProjectSelectorExpanded] = useState(false);
+  const [isProjectOptionsModalVisible, setIsProjectOptionsModalVisible] = useState(false);
+  const [selectedProjectForOptions, setSelectedProjectForOptions] = useState(null);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (isProjectOptionsModalVisible) {
+      Animated.spring(slideAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 65,
+        friction: 11,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isProjectOptionsModalVisible]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('es-MX', {
@@ -118,8 +138,56 @@ export default function HomeScreen() {
     setIsProjectSelectorExpanded(false);
   };
 
-  const handleManageProjects = () => {
-    router.push('/manage-projects');
+  const handleCreateProject = () => {
+    setIsProjectSelectorExpanded(false);
+    router.push('/create-project');
+  };
+
+  const handleOpenProjectOptions = (project, event) => {
+    event.stopPropagation();
+    setSelectedProjectForOptions(project);
+    setIsProjectOptionsModalVisible(true);
+  };
+
+  const handleCloseProjectOptions = () => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setIsProjectOptionsModalVisible(false);
+      setSelectedProjectForOptions(null);
+    });
+  };
+
+  const handleShareProject = () => {
+    handleCloseProjectOptions();
+    // Implementar lógica de compartir
+    console.log('Compartir proyecto:', selectedProjectForOptions?.name);
+  };
+
+  const handleLeaveProject = () => {
+    handleCloseProjectOptions();
+    // Implementar lógica de salir del proyecto
+    console.log('Salir del proyecto:', selectedProjectForOptions?.name);
+  };
+
+  const handleMuteProject = () => {
+    handleCloseProjectOptions();
+    // Implementar lógica de silenciar
+    console.log('Silenciar proyecto:', selectedProjectForOptions?.name);
+  };
+
+  const handleDeleteProject = () => {
+    handleCloseProjectOptions();
+    // Implementar lógica de eliminar
+    console.log('Eliminar proyecto:', selectedProjectForOptions?.name);
+  };
+
+  const handleProjectSettings = () => {
+    handleCloseProjectOptions();
+    // Implementar lógica de configuración
+    console.log('Configuración del proyecto:', selectedProjectForOptions?.name);
   };
 
   return (
@@ -208,19 +276,25 @@ export default function HomeScreen() {
                       }
                     </Text>
                   </View>
-                  <Ionicons name="ellipsis-horizontal" size={ICON_SIZE.sm} color={COLORS.textSecondary} />
+                  <TouchableOpacity
+                    onPress={(event) => handleOpenProjectOptions(project, event)}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Ionicons name="ellipsis-horizontal" size={ICON_SIZE.sm} color={COLORS.textSecondary} />
+                  </TouchableOpacity>
                 </TouchableOpacity>
               ))}
 
-              {/* Manage Projects Button */}
+              {/* Create Project Button */}
               <TouchableOpacity
-                style={styles.manageProjectsButton}
-                onPress={handleManageProjects}
+                style={styles.createProjectButton}
+                onPress={handleCreateProject}
                 activeOpacity={0.7}
               >
-                <Ionicons name="settings-outline" size={ICON_SIZE.sm} color={COLORS.text} />
-                <Text style={[TYPOGRAPHY.bodyBold, styles.manageProjectsText]}>
-                  Gestionar Proyectos
+                <Ionicons name="add-circle-outline" size={ICON_SIZE.md} color={COLORS.primary} />
+                <Text style={[TYPOGRAPHY.bodyBold, styles.createProjectText]}>
+                  Crear Proyecto
                 </Text>
               </TouchableOpacity>
             </View>
@@ -403,6 +477,135 @@ export default function HomeScreen() {
         {/* Bottom padding for tab bar */}
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* Project Options Bottom Sheet Modal */}
+      <Modal
+        visible={isProjectOptionsModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCloseProjectOptions}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={handleCloseProjectOptions}
+        >
+          <Animated.View
+            style={[
+              styles.modalContent,
+              {
+                transform: [{
+                  translateY: slideAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [600, 0],
+                  }),
+                }],
+              },
+            ]}
+          >
+            <Pressable onPress={(e) => e.stopPropagation()}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHandle} />
+              {selectedProjectForOptions && (
+                <View style={styles.modalProjectInfo}>
+                  <View style={styles.modalProjectIcon}>
+                    <Ionicons
+                      name={selectedProjectForOptions.isShared ? "people" : "folder-outline"}
+                      size={ICON_SIZE.md}
+                      color={COLORS.text}
+                    />
+                  </View>
+                  <Text style={[TYPOGRAPHY.bodyBold, styles.modalProjectName]}>
+                    {selectedProjectForOptions.name}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Modal Options */}
+            <View style={styles.modalOptions}>
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={handleShareProject}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.modalOptionIcon, { backgroundColor: COLORS.primary + '15' }]}>
+                  <Ionicons name="share-outline" size={ICON_SIZE.md} color={COLORS.primary} />
+                </View>
+                <Text style={[TYPOGRAPHY.body, styles.modalOptionText]}>
+                  Compartir Proyecto
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={handleProjectSettings}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.modalOptionIcon, { backgroundColor: COLORS.textSecondary + '15' }]}>
+                  <Ionicons name="settings-outline" size={ICON_SIZE.md} color={COLORS.textSecondary} />
+                </View>
+                <Text style={[TYPOGRAPHY.body, styles.modalOptionText]}>
+                  Configuración
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={handleMuteProject}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.modalOptionIcon, { backgroundColor: COLORS.textSecondary + '15' }]}>
+                  <Ionicons name="notifications-off-outline" size={ICON_SIZE.md} color={COLORS.textSecondary} />
+                </View>
+                <Text style={[TYPOGRAPHY.body, styles.modalOptionText]}>
+                  Silenciar Notificaciones
+                </Text>
+              </TouchableOpacity>
+
+              {selectedProjectForOptions?.isShared && (
+                <TouchableOpacity
+                  style={styles.modalOption}
+                  onPress={handleLeaveProject}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.modalOptionIcon, { backgroundColor: COLORS.warning + '15' }]}>
+                    <Ionicons name="exit-outline" size={ICON_SIZE.md} color={COLORS.warning} />
+                  </View>
+                  <Text style={[TYPOGRAPHY.body, styles.modalOptionText]}>
+                    Salir del Proyecto
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={[styles.modalOption, styles.modalOptionDanger]}
+                onPress={handleDeleteProject}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.modalOptionIcon, { backgroundColor: COLORS.error + '15' }]}>
+                  <Ionicons name="trash-outline" size={ICON_SIZE.md} color={COLORS.error} />
+                </View>
+                <Text style={[TYPOGRAPHY.body, styles.modalOptionTextDanger]}>
+                  Eliminar Proyecto
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Cancel Button */}
+            <TouchableOpacity
+              style={styles.modalCancelButton}
+              onPress={handleCloseProjectOptions}
+              activeOpacity={0.7}
+            >
+              <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.text }]}>
+                Cancelar
+              </Text>
+            </TouchableOpacity>
+            </Pressable>
+          </Animated.View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -502,7 +705,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: RADIUS.md,
-    backgroundColor: COLORS.backgroundSecondary,
+    backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -516,16 +719,18 @@ const styles = StyleSheet.create({
   projectItemMeta: {
     color: COLORS.textSecondary,
   },
-  manageProjectsButton: {
+  createProjectButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: SPACING.lg,
     gap: SPACING.sm,
-    backgroundColor: COLORS.backgroundSecondary,
+    backgroundColor: COLORS.white,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
   },
-  manageProjectsText: {
-    color: COLORS.text,
+  createProjectText: {
+    color: COLORS.primary,
   },
   header: {
     flexDirection: 'row',
@@ -538,8 +743,7 @@ const styles = StyleSheet.create({
   notificationButton: {
     width: 44,
     height: 44,
-    borderRadius: RADIUS.round,
-    backgroundColor: COLORS.backgroundSecondary,
+    backgroundColor: COLORS.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -648,6 +852,87 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: RADIUS.md,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: RADIUS.xxl,
+    borderTopRightRadius: RADIUS.xxl,
+    paddingBottom: SPACING.xl,
+    ...SHADOWS.lg,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: COLORS.border,
+    borderRadius: RADIUS.round,
+    marginBottom: SPACING.lg,
+  },
+  modalProjectInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+  },
+  modalProjectIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalProjectName: {
+    fontSize: 18,
+  },
+  modalOptions: {
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.lg,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.lg,
+    gap: SPACING.lg,
+  },
+  modalOptionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalOptionText: {
+    color: COLORS.text,
+    flex: 1,
+  },
+  modalOptionDanger: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    marginTop: SPACING.sm,
+  },
+  modalOptionTextDanger: {
+    color: COLORS.error,
+    flex: 1,
+  },
+  modalCancelButton: {
+    marginHorizontal: SPACING.xl,
+    marginTop: SPACING.lg,
+    paddingVertical: SPACING.lg,
+    backgroundColor: COLORS.backgroundSecondary,
+    borderRadius: RADIUS.lg,
     alignItems: 'center',
   },
 });
