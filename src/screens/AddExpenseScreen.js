@@ -8,14 +8,12 @@ import {
   SPACING,
   RADIUS,
   TYPOGRAPHY,
-  SHADOWS,
-  CARD_STYLES,
   BUTTON_STYLES,
   ICON_SIZE,
-  LAYOUT,
-  INPUT_STYLES,
 } from '../constants';
 import DatePickerInput from '../components/forms/DatePickerInput';
+import { Header, Input } from '../components/ui';
+import { formatCurrency } from '../utils/formatters';
 
 const CATEGORIES = [
   { id: 1, name: 'Comida', icon: 'restaurant-outline', color: COLORS.categoryFood },
@@ -45,14 +43,11 @@ export default function AddExpenseScreen() {
     setAmount(numericValue);
   };
 
-  const formatAmount = () => {
+  const getFormattedAmount = () => {
     if (!amount) return '$0.00';
     const num = parseFloat(amount);
     if (isNaN(num)) return '$0.00';
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-    }).format(num);
+    return formatCurrency(num, 'MXN');
   };
 
   const handleBack = () => {
@@ -75,7 +70,7 @@ export default function AddExpenseScreen() {
 
     Alert.alert(
       'Gasto Guardado',
-      `Gasto de ${formatAmount()} guardado exitosamente`,
+      `Gasto de ${getFormattedAmount()} guardado exitosamente`,
       [{ text: 'OK', onPress: () => router.back() }]
     );
   };
@@ -92,15 +87,12 @@ export default function AddExpenseScreen() {
       >
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={handleBack} style={styles.backButton} activeOpacity={0.7}>
-              <Ionicons name="chevron-back" size={ICON_SIZE.md} color={COLORS.text} />
-            </TouchableOpacity>
-            <Text style={TYPOGRAPHY.h3}>Nuevo Gasto</Text>
-            <TouchableOpacity style={styles.scanButton} onPress={handleScanReceipt} activeOpacity={0.7}>
-              <Ionicons name="camera-outline" size={ICON_SIZE.md} color={COLORS.white} />
-            </TouchableOpacity>
-          </View>
+          <Header
+            title="Nuevo Gasto"
+            onBack={handleBack}
+            rightIcon="camera-outline"
+            onRightPress={handleScanReceipt}
+          />
 
           {/* Amount Input */}
           <View style={styles.amountSection}>
@@ -120,7 +112,7 @@ export default function AddExpenseScreen() {
               />
             </View>
             <Text style={[TYPOGRAPHY.caption, styles.amountFormatted]}>
-              {formatAmount()} MXN
+              {getFormattedAmount()} MXN
             </Text>
           </View>
 
@@ -198,16 +190,13 @@ export default function AddExpenseScreen() {
 
           {/* Description */}
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Descripción (opcional)</Text>
-            <TextInput
-              style={[INPUT_STYLES.base, styles.descriptionInput]}
+            <Input
+              label="Descripción (opcional)"
               value={description}
               onChangeText={setDescription}
               placeholder="Ej: Comida en restaurante..."
-              placeholderTextColor={COLORS.textSecondary}
-              multiline
+              multiline={true}
               numberOfLines={3}
-              textAlignVertical="top"
             />
           </View>
 
@@ -254,31 +243,6 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.md,
-    paddingBottom: SPACING.xl,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: RADIUS.round,
-    backgroundColor: COLORS.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scanButton: {
-    width: 48,
-    height: 48,
-    borderRadius: RADIUS.round,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...SHADOWS.md,
   },
   amountSection: {
     alignItems: 'center',
@@ -380,9 +344,6 @@ const styles = StyleSheet.create({
   },
   projectTextSelected: {
     fontWeight: '700',
-  },
-  descriptionInput: {
-    minHeight: 100,
   },
   saveButton: {
     marginHorizontal: SPACING.xl,

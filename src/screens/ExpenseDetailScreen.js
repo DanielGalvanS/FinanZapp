@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
+import { formatCurrency } from '../utils/formatters';
 
 // Datos de ejemplo - En producción vendrían como parámetros de navegación
 const EXPENSE_DATA = {
@@ -31,13 +32,6 @@ export default function ExpenseDetailScreen() {
   const router = useRouter();
   const [commentText, setCommentText] = useState('');
   const [expense, setExpense] = useState(EXPENSE_DATA);
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-    }).format(Math.abs(amount));
-  };
 
   const handleBack = () => {
     router.back();

@@ -1,16 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   COLORS,
   SPACING,
-  RADIUS,
   TYPOGRAPHY,
-  CARD_STYLES,
   ICON_SIZE,
 } from '../constants';
+import { ProfileHeader, MenuSection } from '../components/profile';
 
 // Datos de ejemplo
 const USER_DATA = {
@@ -143,57 +142,6 @@ export default function ProfileScreen() {
     console.log('Logout pressed');
   };
 
-  const renderMenuItem = (item, isLast) => {
-    return (
-      <TouchableOpacity
-        key={item.id}
-        style={[
-          styles.menuItem,
-          isLast && styles.menuItemLast,
-        ]}
-        onPress={() => handleItemPress(item)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.menuItemLeft}>
-          <Text style={[
-            TYPOGRAPHY.body,
-            styles.menuItemLabel,
-            item.danger && styles.menuItemLabelDanger
-          ]}>
-            {item.label}
-          </Text>
-          {item.subtitle && (
-            <Text style={[TYPOGRAPHY.caption, styles.menuItemSubtitle]}>{item.subtitle}</Text>
-          )}
-        </View>
-
-        <View style={styles.menuItemRight}>
-          {item.badge && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{item.badge}</Text>
-            </View>
-          )}
-
-          {item.value && item.action !== 'toggle' && (
-            <Text style={[TYPOGRAPHY.body, styles.menuItemValue]}>{item.value}</Text>
-          )}
-
-          {item.action === 'toggle' ? (
-            <Switch
-              value={toggleStates[item.id]}
-              onValueChange={() => handleToggle(item.id)}
-              trackColor={{ false: COLORS.gray300, true: COLORS.primary }}
-              thumbColor={COLORS.white}
-              ios_backgroundColor={COLORS.gray300}
-            />
-          ) : (
-            <Text style={styles.menuItemChevron}>›</Text>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -202,33 +150,24 @@ export default function ProfileScreen() {
           <Text style={TYPOGRAPHY.h2}>Perfil</Text>
         </View>
 
-        {/* User Info Card */}
-        <View style={[CARD_STYLES.minimal, styles.userCard]}>
-          <View style={styles.avatarContainer}>
-            <Ionicons name="person" size={ICON_SIZE.xl} color={COLORS.white} />
-          </View>
-          <View style={styles.userInfo}>
-            <Text style={[TYPOGRAPHY.lg, styles.userName]}>{USER_DATA.name}</Text>
-            <Text style={[TYPOGRAPHY.body, styles.userEmail]}>{USER_DATA.email}</Text>
-          </View>
-          <TouchableOpacity style={styles.editButton} activeOpacity={0.7}>
-            <Text style={[TYPOGRAPHY.body, styles.editButtonText]}>Editar</Text>
-          </TouchableOpacity>
-        </View>
+        {/* User Profile Header */}
+        <ProfileHeader
+          name={USER_DATA.name}
+          email={USER_DATA.email}
+          onEditPress={() => console.log('Edit profile')}
+        />
 
         {/* Menu Sections */}
-        {MENU_SECTIONS.map((section, sectionIndex) => (
-          <View key={section.id} style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name={section.icon} size={ICON_SIZE.sm} color={COLORS.textSecondary} />
-              <Text style={[TYPOGRAPHY.bodyBold, styles.sectionTitle]}>{section.title}</Text>
-            </View>
-            <View style={[CARD_STYLES.minimal, styles.menuCard]}>
-              {section.items.map((item, itemIndex) =>
-                renderMenuItem(item, itemIndex === section.items.length - 1)
-              )}
-            </View>
-          </View>
+        {MENU_SECTIONS.map((section) => (
+          <MenuSection
+            key={section.id}
+            title={section.title}
+            icon={section.icon}
+            items={section.items}
+            toggleStates={toggleStates}
+            onToggle={handleToggle}
+            onItemPress={handleItemPress}
+          />
         ))}
 
         {/* Logout Button */}
@@ -264,109 +203,6 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.md,
     paddingBottom: SPACING.lg,
   },
-  userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: SPACING.xl,
-    marginBottom: SPACING.xxl,
-  },
-  avatarContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: RADIUS.round,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.lg,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontWeight: '700',
-    marginBottom: SPACING.xs,
-  },
-  userEmail: {
-    color: COLORS.textSecondary,
-  },
-  editButton: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.backgroundSecondary,
-  },
-  editButtonText: {
-    fontWeight: '600',
-  },
-  section: {
-    marginBottom: SPACING.xxl,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.md,
-    gap: SPACING.sm,
-  },
-  sectionTitle: {
-    color: COLORS.textSecondary,
-  },
-  menuCard: {
-    marginHorizontal: SPACING.xl,
-    overflow: 'hidden',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: SPACING.lg,
-    paddingHorizontal: SPACING.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  menuItemLast: {
-    borderBottomWidth: 0,
-  },
-  menuItemLeft: {
-    flex: 1,
-  },
-  menuItemLabel: {
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  menuItemLabelDanger: {
-    color: COLORS.error,
-  },
-  menuItemSubtitle: {
-    marginTop: SPACING.xs,
-  },
-  menuItemRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  menuItemValue: {
-    color: COLORS.textSecondary,
-    marginRight: SPACING.xs,
-  },
-  menuItemChevron: {
-    fontSize: 24,
-    color: COLORS.textSecondary,
-    fontWeight: '300',
-  },
-  badge: {
-    backgroundColor: COLORS.primary,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
-    minWidth: 24,
-    alignItems: 'center',
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.white,
-  },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -376,7 +212,7 @@ const styles = StyleSheet.create({
     marginTop: SPACING.sm,
     marginBottom: SPACING.xl,
     padding: SPACING.lg,
-    borderRadius: RADIUS.md,
+    borderRadius: SPACING.md,
     borderWidth: 2,
     borderColor: COLORS.error,
     gap: SPACING.sm,

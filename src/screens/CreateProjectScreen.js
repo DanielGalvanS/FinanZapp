@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
   COLORS,
   SPACING,
-  RADIUS,
-  TYPOGRAPHY,
-  SHADOWS,
   BUTTON_STYLES,
   ICON_SIZE,
-  INPUT_STYLES,
+  TYPOGRAPHY,
 } from '../constants';
+import { Header, Input, IconPicker } from '../components/ui';
 
 const PROJECT_ICONS = [
   { id: 1, icon: 'folder-outline', color: COLORS.primary },
@@ -62,78 +60,45 @@ export default function CreateProjectScreen() {
       >
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={handleBack} style={styles.backButton} activeOpacity={0.7}>
-              <Ionicons name="chevron-back" size={ICON_SIZE.md} color={COLORS.text} />
-            </TouchableOpacity>
-            <Text style={TYPOGRAPHY.h3}>Nuevo Proyecto</Text>
-            <View style={styles.placeholder} />
-          </View>
+          <Header
+            title="Nuevo Proyecto"
+            onBack={handleBack}
+          />
 
           {/* Project Name */}
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Nombre del Proyecto</Text>
-            <TextInput
-              style={[INPUT_STYLES.base, styles.nameInput]}
+            <Input
+              label="Nombre del Proyecto"
               value={projectName}
               onChangeText={setProjectName}
               placeholder="Ej: Renta Depa, Vacaciones..."
-              placeholderTextColor={COLORS.textSecondary}
               maxLength={50}
+              showCharCount={true}
             />
-            <Text style={styles.charCount}>{projectName.length}/50</Text>
           </View>
 
           {/* Icon Selection */}
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Icono del Proyecto</Text>
-            <View style={styles.iconsGrid}>
-              {PROJECT_ICONS.map((iconItem) => (
-                <TouchableOpacity
-                  key={iconItem.id}
-                  style={[
-                    styles.iconItem,
-                    selectedIcon?.id === iconItem.id && [
-                      styles.iconItemSelected,
-                      { borderColor: iconItem.color },
-                    ],
-                  ]}
-                  onPress={() => setSelectedIcon(iconItem)}
-                  activeOpacity={0.7}
-                >
-                  <View
-                    style={[
-                      styles.iconCircle,
-                      { backgroundColor: iconItem.color + '20' },
-                      selectedIcon?.id === iconItem.id && { backgroundColor: iconItem.color },
-                    ]}
-                  >
-                    <Ionicons
-                      name={iconItem.icon}
-                      size={ICON_SIZE.md}
-                      color={selectedIcon?.id === iconItem.id ? COLORS.white : iconItem.color}
-                    />
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <IconPicker
+              label="Icono del Proyecto"
+              icons={PROJECT_ICONS}
+              selectedIcon={selectedIcon}
+              onSelect={setSelectedIcon}
+            />
           </View>
 
           {/* Description */}
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Descripción (opcional)</Text>
-            <TextInput
-              style={[INPUT_STYLES.base, styles.descriptionInput]}
+            <Input
+              label="Descripción (opcional)"
               value={description}
               onChangeText={setDescription}
               placeholder="Ej: Gastos compartidos del departamento..."
-              placeholderTextColor={COLORS.textSecondary}
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
               maxLength={200}
+              showCharCount={true}
+              multiline={true}
+              numberOfLines={3}
             />
-            <Text style={styles.charCount}>{description.length}/200</Text>
           </View>
 
           {/* Save Button */}
@@ -172,70 +137,8 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.md,
-    paddingBottom: SPACING.xl,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: RADIUS.round,
-    backgroundColor: COLORS.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholder: {
-    width: 40,
-  },
   section: {
     paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.xxl,
-  },
-  sectionLabel: {
-    ...TYPOGRAPHY.bodyBold,
-    marginBottom: SPACING.md,
-  },
-  nameInput: {
-    fontSize: 16,
-  },
-  charCount: {
-    ...TYPOGRAPHY.tiny,
-    color: COLORS.textSecondary,
-    textAlign: 'right',
-    marginTop: SPACING.xs,
-  },
-  iconsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.md,
-    justifyContent: 'center'
-  },
-  iconItem: {
-    width: 64,
-    height: 64,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.white,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconItemSelected: {
-    borderWidth: 3,
-  },
-  iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: RADIUS.round,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  descriptionInput: {
-    minHeight: 100,
   },
   saveButton: {
     marginHorizontal: SPACING.xl,

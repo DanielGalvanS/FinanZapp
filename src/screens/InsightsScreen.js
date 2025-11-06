@@ -10,6 +10,29 @@ import {
   CARD_STYLES,
   ICON_SIZE,
 } from '../constants';
+import { StatCard, BudgetCard, GoalCard, ApprovalCard } from '../components/insights';
+
+// Datos de ejemplo
+const BUDGETS = [
+  { id: 1, name: 'Comida', spent: 8450, total: 10000 },
+  { id: 2, name: 'Transporte', spent: 4200, total: 5000 },
+];
+
+const GOALS = [
+  { id: 1, name: 'Vacaciones 2025', current: 12500, target: 20000 },
+  { id: 2, name: 'Fondo de Emergencia', current: 45000, target: 50000 },
+];
+
+const APPROVALS = [
+  {
+    id: 1,
+    name: 'Comida en Restaurante',
+    userName: 'Juan Pérez',
+    amount: 850,
+    icon: 'restaurant-outline',
+    iconColor: COLORS.categoryFood,
+  },
+];
 
 export default function InsightsScreen() {
   return (
@@ -27,27 +50,26 @@ export default function InsightsScreen() {
         {/* Dashboard Cards */}
         <View style={styles.dashboardSection}>
           <View style={styles.dashboardRow}>
-            <View style={[CARD_STYLES.dark, styles.dashboardCard, styles.dashboardCardPrimary]}>
-              <Text style={[TYPOGRAPHY.caption, styles.dashboardLabel]}>Balance Total</Text>
-              <Text style={[TYPOGRAPHY.h2, styles.dashboardAmount]}>$651,972</Text>
-              <View style={styles.dashboardTrend}>
-                <Ionicons name="trending-up" size={ICON_SIZE.sm} color={COLORS.white} />
-                <Text style={[TYPOGRAPHY.body, styles.trendText]}>+12.5%</Text>
-              </View>
-            </View>
+            <StatCard
+              label="Balance Total"
+              amount={651972}
+              change="+12.5%"
+              changeIcon="trending-up"
+              variant="primary"
+            />
           </View>
 
           <View style={styles.dashboardRow}>
-            <View style={[CARD_STYLES.minimal, styles.dashboardCard]}>
-              <Text style={[TYPOGRAPHY.caption, styles.dashboardLabelSecondary]}>Ingresos</Text>
-              <Text style={[TYPOGRAPHY.h3, styles.dashboardAmountSmall]}>$85,420</Text>
-              <Text style={[TYPOGRAPHY.body, styles.dashboardChange]}>+8.2%</Text>
-            </View>
-            <View style={[CARD_STYLES.minimal, styles.dashboardCard]}>
-              <Text style={[TYPOGRAPHY.caption, styles.dashboardLabelSecondary]}>Gastos</Text>
-              <Text style={[TYPOGRAPHY.h3, styles.dashboardAmountSmall]}>$42,330</Text>
-              <Text style={[TYPOGRAPHY.body, styles.dashboardChange, styles.dashboardChangeNegative]}>-3.1%</Text>
-            </View>
+            <StatCard
+              label="Ingresos"
+              amount={85420}
+              change="+8.2%"
+            />
+            <StatCard
+              label="Gastos"
+              amount={42330}
+              change="-3.1%"
+            />
           </View>
         </View>
 
@@ -63,27 +85,14 @@ export default function InsightsScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={[CARD_STYLES.minimal, styles.budgetCard]}>
-            <View style={styles.budgetHeader}>
-              <Text style={[TYPOGRAPHY.bodyBold, styles.budgetName]}>Comida</Text>
-              <Text style={[TYPOGRAPHY.body, styles.budgetAmount]}>$8,450 / $10,000</Text>
-            </View>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '84.5%' }]} />
-            </View>
-            <Text style={[TYPOGRAPHY.caption, styles.budgetStatus]}>Quedan $1,550 • 85% usado</Text>
-          </View>
-
-          <View style={[CARD_STYLES.minimal, styles.budgetCard]}>
-            <View style={styles.budgetHeader}>
-              <Text style={[TYPOGRAPHY.bodyBold, styles.budgetName]}>Transporte</Text>
-              <Text style={[TYPOGRAPHY.body, styles.budgetAmount]}>$4,200 / $5,000</Text>
-            </View>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '84%' }, styles.progressFillWarning]} />
-            </View>
-            <Text style={[TYPOGRAPHY.caption, styles.budgetStatus]}>Quedan $800 • 84% usado</Text>
-          </View>
+          {BUDGETS.map((budget) => (
+            <BudgetCard
+              key={budget.id}
+              name={budget.name}
+              spent={budget.spent}
+              total={budget.total}
+            />
+          ))}
 
           <TouchableOpacity style={styles.addButton} activeOpacity={0.7}>
             <Ionicons name="add" size={ICON_SIZE.sm} color={COLORS.textSecondary} />
@@ -103,23 +112,14 @@ export default function InsightsScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={[CARD_STYLES.minimal, styles.goalCard]}>
-            <Text style={[TYPOGRAPHY.bodyBold, styles.goalName]}>Vacaciones 2025</Text>
-            <Text style={[TYPOGRAPHY.body, styles.goalProgress]}>$12,500 / $20,000</Text>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '62.5%' }, styles.progressFillGoal]} />
-            </View>
-            <Text style={[TYPOGRAPHY.caption, styles.goalStatus]}>62% completado • Faltan $7,500</Text>
-          </View>
-
-          <View style={[CARD_STYLES.minimal, styles.goalCard]}>
-            <Text style={[TYPOGRAPHY.bodyBold, styles.goalName]}>Fondo de Emergencia</Text>
-            <Text style={[TYPOGRAPHY.body, styles.goalProgress]}>$45,000 / $50,000</Text>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '90%' }, styles.progressFillGoal]} />
-            </View>
-            <Text style={[TYPOGRAPHY.caption, styles.goalStatus]}>90% completado • Faltan $5,000</Text>
-          </View>
+          {GOALS.map((goal) => (
+            <GoalCard
+              key={goal.id}
+              name={goal.name}
+              current={goal.current}
+              target={goal.target}
+            />
+          ))}
 
           <TouchableOpacity style={styles.addButton} activeOpacity={0.7}>
             <Ionicons name="add" size={ICON_SIZE.sm} color={COLORS.textSecondary} />
@@ -171,26 +171,18 @@ export default function InsightsScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={[CARD_STYLES.minimal, styles.approvalCard]}>
-            <View style={styles.approvalHeader}>
-              <View style={styles.approvalIconContainer}>
-                <Ionicons name="restaurant-outline" size={ICON_SIZE.md} color={COLORS.categoryFood} />
-              </View>
-              <View style={styles.approvalInfo}>
-                <Text style={[TYPOGRAPHY.bodyBold, styles.approvalName]}>Comida en Restaurante</Text>
-                <Text style={[TYPOGRAPHY.caption, styles.approvalUser]}>Por Juan Pérez</Text>
-              </View>
-              <Text style={[TYPOGRAPHY.lg, styles.approvalAmount]}>$850</Text>
-            </View>
-            <View style={styles.approvalActions}>
-              <TouchableOpacity style={styles.rejectButton} activeOpacity={0.7}>
-                <Text style={[TYPOGRAPHY.bodyBold, styles.rejectButtonText]}>Rechazar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.approveButton} activeOpacity={0.7}>
-                <Text style={[TYPOGRAPHY.bodyBold, styles.approveButtonText]}>Aprobar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          {APPROVALS.map((approval) => (
+            <ApprovalCard
+              key={approval.id}
+              name={approval.name}
+              userName={approval.userName}
+              amount={approval.amount}
+              icon={approval.icon}
+              iconColor={approval.iconColor}
+              onApprove={() => console.log('Aprobar:', approval.id)}
+              onReject={() => console.log('Rechazar:', approval.id)}
+            />
+          ))}
         </View>
 
         {/* Bottom padding for tab bar */}
@@ -237,48 +229,6 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
     marginBottom: SPACING.md,
   },
-  dashboardCard: {
-    flex: 1,
-  },
-  dashboardCardPrimary: {
-    marginBottom: 0,
-  },
-  dashboardLabel: {
-    color: COLORS.white,
-    opacity: 0.7,
-    fontWeight: '500',
-    marginBottom: SPACING.sm,
-  },
-  dashboardLabelSecondary: {
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-    marginBottom: SPACING.sm,
-  },
-  dashboardAmount: {
-    color: COLORS.white,
-    marginBottom: SPACING.sm,
-    letterSpacing: -1,
-  },
-  dashboardAmountSmall: {
-    fontWeight: '700',
-    marginBottom: SPACING.xs,
-  },
-  dashboardTrend: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-  },
-  trendText: {
-    fontWeight: '600',
-    color: COLORS.white,
-  },
-  dashboardChange: {
-    fontWeight: '600',
-    color: COLORS.success,
-  },
-  dashboardChangeNegative: {
-    color: COLORS.error,
-  },
   section: {
     paddingHorizontal: SPACING.xl,
     marginBottom: SPACING.xxxl,
@@ -300,57 +250,6 @@ const styles = StyleSheet.create({
   seeAllText: {
     color: COLORS.text,
     fontWeight: '600',
-  },
-  budgetCard: {
-    marginBottom: SPACING.md,
-  },
-  budgetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  budgetName: {
-    color: COLORS.text,
-  },
-  budgetAmount: {
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: COLORS.border,
-    borderRadius: RADIUS.xs,
-    overflow: 'hidden',
-    marginBottom: SPACING.sm,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: COLORS.primary,
-    borderRadius: RADIUS.xs,
-  },
-  progressFillWarning: {
-    backgroundColor: COLORS.warning,
-  },
-  progressFillGoal: {
-    backgroundColor: COLORS.success,
-  },
-  budgetStatus: {
-    color: COLORS.textSecondary,
-  },
-  goalCard: {
-    marginBottom: SPACING.md,
-  },
-  goalName: {
-    marginBottom: SPACING.sm,
-  },
-  goalProgress: {
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.md,
-  },
-  goalStatus: {
-    color: COLORS.textSecondary,
   },
   addButton: {
     flexDirection: 'row',
@@ -380,59 +279,6 @@ const styles = StyleSheet.create({
   reportLabel: {
     textAlign: 'center',
     marginTop: SPACING.sm,
-  },
-  approvalCard: {
-    marginBottom: SPACING.md,
-  },
-  approvalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.lg,
-  },
-  approvalIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: RADIUS.round,
-    backgroundColor: COLORS.categoryFood + '20',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  approvalInfo: {
-    flex: 1,
-  },
-  approvalName: {
-    marginBottom: SPACING.xs,
-  },
-  approvalUser: {
-    color: COLORS.textSecondary,
-  },
-  approvalAmount: {
-    fontWeight: '700',
-  },
-  approvalActions: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-  },
-  rejectButton: {
-    flex: 1,
-    padding: SPACING.md,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.backgroundSecondary,
-    alignItems: 'center',
-  },
-  rejectButtonText: {
-    color: COLORS.text,
-  },
-  approveButton: {
-    flex: 1,
-    padding: SPACING.md,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-  },
-  approveButtonText: {
-    color: COLORS.white,
   },
   badge: {
     backgroundColor: COLORS.primary,

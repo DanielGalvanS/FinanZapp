@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Pressable, Animated } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,11 @@ import {
   ICON_SIZE,
   LAYOUT,
 } from '../constants';
+import { SectionHeader, BottomSheet, BottomSheetOption, Avatar } from '../components/ui';
+import { ProjectCard } from '../components/projects';
+import { TransactionCard } from '../components/transactions';
+import { CategoryCard } from '../components/categories';
+import { BalanceCard, QuickActions, ProjectSelector } from '../components/home';
 
 // Datos de ejemplo
 const SPENDING_CATEGORIES = [
@@ -89,31 +94,6 @@ export default function HomeScreen() {
   const [isProjectSelectorExpanded, setIsProjectSelectorExpanded] = useState(false);
   const [isProjectOptionsModalVisible, setIsProjectOptionsModalVisible] = useState(false);
   const [selectedProjectForOptions, setSelectedProjectForOptions] = useState(null);
-  const slideAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (isProjectOptionsModalVisible) {
-      Animated.spring(slideAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 65,
-        friction: 11,
-      }).start();
-    } else {
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [isProjectOptionsModalVisible]);
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-    }).format(Math.abs(amount));
-  };
 
   const handleTransactionPress = (transactionId) => {
     router.push(`/expense-detail/${transactionId}`);
@@ -150,14 +130,10 @@ export default function HomeScreen() {
   };
 
   const handleCloseProjectOptions = () => {
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      setIsProjectOptionsModalVisible(false);
+    setIsProjectOptionsModalVisible(false);
+    setTimeout(() => {
       setSelectedProjectForOptions(null);
-    });
+    }, 300);
   };
 
   const handleShareProject = () => {
@@ -186,8 +162,9 @@ export default function HomeScreen() {
 
   const handleProjectSettings = () => {
     handleCloseProjectOptions();
-    // Implementar lógica de configuración
-    console.log('Configuración del proyecto:', selectedProjectForOptions?.name);
+    if (selectedProjectForOptions) {
+      router.push(`/project-settings/${selectedProjectForOptions.id}`);
+    }
   };
 
   return (
@@ -198,108 +175,15 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Project Selector */}
-        <View style={styles.projectSelectorWrapper}>
-          <TouchableOpacity
-            style={styles.projectSelector}
-            onPress={handleProjectPress}
-            activeOpacity={0.7}
-          >
-            <View style={styles.projectInfo}>
-              <View style={styles.projectHeader}>
-                <Ionicons
-                  name={currentProject.isShared ? "people" : "folder-outline"}
-                  size={ICON_SIZE.sm}
-                  color={COLORS.textSecondary}
-                />
-                <Text style={[TYPOGRAPHY.caption, styles.projectLabel]}>
-                  {currentProject.isShared ? 'Proyecto Compartido' : 'Proyecto Personal'}
-                </Text>
-              </View>
-              <Text style={[TYPOGRAPHY.bodyBold, styles.projectName]}>
-                {currentProject.name}
-              </Text>
-              {currentProject.isShared && currentProject.collaborators.length > 0 && (
-                <View style={styles.collaboratorsContainer}>
-                  <View style={styles.avatarGroup}>
-                    {currentProject.collaborators.slice(0, 3).map((collab, index) => (
-                      <View
-                        key={collab.id}
-                        style={[
-                          styles.avatarCircle,
-                          { marginLeft: index > 0 ? -8 : 0, zIndex: 3 - index }
-                        ]}
-                      >
-                        <Text style={styles.avatarText}>
-                          {collab.name.charAt(0)}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                  <Text style={[TYPOGRAPHY.caption, styles.collaboratorCount]}>
-                    {currentProject.collaborators.length} colaborador{currentProject.collaborators.length > 1 ? 'es' : ''}
-                  </Text>
-                </View>
-              )}
-            </View>
-            <Ionicons
-              name={isProjectSelectorExpanded ? "chevron-up" : "chevron-down"}
-              size={ICON_SIZE.sm}
-              color={COLORS.textSecondary}
-            />
-          </TouchableOpacity>
-
-          {/* Expanded Projects List */}
-          {isProjectSelectorExpanded && (
-            <View style={styles.projectsList}>
-              {AVAILABLE_PROJECTS.filter(p => p.id !== currentProject.id).map((project) => (
-                <TouchableOpacity
-                  key={project.id}
-                  style={styles.projectItem}
-                  onPress={() => handleSelectProject(project)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.projectItemIcon}>
-                    <Ionicons
-                      name={project.isShared ? "people" : "folder-outline"}
-                      size={ICON_SIZE.md}
-                      color={COLORS.text}
-                    />
-                  </View>
-                  <View style={styles.projectItemInfo}>
-                    <Text style={[TYPOGRAPHY.bodyBold, styles.projectItemName]}>
-                      {project.name}
-                    </Text>
-                    <Text style={[TYPOGRAPHY.caption, styles.projectItemMeta]}>
-                      {project.isShared && project.collaborators.length > 0
-                        ? `${project.collaborators.length} colaborador${project.collaborators.length > 1 ? 'es' : ''}`
-                        : 'Personal'
-                      }
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={(event) => handleOpenProjectOptions(project, event)}
-                    activeOpacity={0.7}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Ionicons name="ellipsis-horizontal" size={ICON_SIZE.sm} color={COLORS.textSecondary} />
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              ))}
-
-              {/* Create Project Button */}
-              <TouchableOpacity
-                style={styles.createProjectButton}
-                onPress={handleCreateProject}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="add-circle-outline" size={ICON_SIZE.md} color={COLORS.primary} />
-                <Text style={[TYPOGRAPHY.bodyBold, styles.createProjectText]}>
-                  Crear Proyecto
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+        <ProjectSelector
+          currentProject={currentProject}
+          projects={AVAILABLE_PROJECTS}
+          isExpanded={isProjectSelectorExpanded}
+          onToggleExpanded={handleProjectPress}
+          onSelectProject={handleSelectProject}
+          onCreateProject={handleCreateProject}
+          onProjectOptions={handleOpenProjectOptions}
+        />
 
         {/* Header */}
         <View style={styles.header}>
@@ -343,134 +227,55 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        {/* Balance Card - Dark Elegant Style */}
-        <View style={[CARD_STYLES.dark, styles.balanceCard]}>
-          <Text style={[TYPOGRAPHY.caption, styles.balanceLabel]}>
-            Balance Total
-          </Text>
-          <Text style={[TYPOGRAPHY.h1, styles.balanceAmount]}>
-            $651,972.00
-          </Text>
-          <Text style={[TYPOGRAPHY.caption, styles.balanceCurrency]}>
-            MXN
-          </Text>
-
-          <View style={styles.balanceStats}>
-            <View style={styles.statItem}>
-              <Text style={[TYPOGRAPHY.caption, styles.statLabel]}>Ingresos</Text>
-              <Text style={[TYPOGRAPHY.h4, styles.statAmount]}>+$85,420</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={[TYPOGRAPHY.caption, styles.statLabel]}>Gastos</Text>
-              <Text style={[TYPOGRAPHY.h4, styles.statAmount]}>-$42,330</Text>
-            </View>
-          </View>
-
-          <View style={styles.comparisonContainer}>
-            <Ionicons name="trending-down" size={ICON_SIZE.sm} color={COLORS.white} />
-            <Text style={[TYPOGRAPHY.caption, styles.comparisonText]}>
-              12% menos que el mes pasado
-            </Text>
-          </View>
-        </View>
+        {/* Balance Card */}
+        <BalanceCard
+          balance={651972}
+          income={85420}
+          expenses={42330}
+          comparison="12% menos que el mes pasado"
+          comparisonTrend="down"
+          currency="MXN"
+        />
 
         {/* Quick Actions */}
-        <View style={styles.quickActionsContainer}>
-          {QUICK_ACTIONS.map((action) => (
-            <TouchableOpacity
-              key={action.id}
-              style={styles.quickActionButton}
-              onPress={() => handleQuickAction(action)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.quickActionIcon}>
-                <Ionicons name={action.icon} size={ICON_SIZE.lg} color={COLORS.text} />
-              </View>
-              <Text style={[TYPOGRAPHY.caption, { color: COLORS.text, fontWeight: '600' }]}>
-                {action.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <QuickActions
+          actions={QUICK_ACTIONS}
+          onActionPress={handleQuickAction}
+        />
 
         {/* Spending Categories Section */}
         <View style={LAYOUT.section}>
-          <View style={LAYOUT.sectionHeader}>
-            <Text style={TYPOGRAPHY.h3}>Resumen de Gastos</Text>
-            <TouchableOpacity onPress={handleViewAllExpenses} activeOpacity={0.7}>
-              <Text style={[TYPOGRAPHY.caption, { color: COLORS.primary, fontWeight: '600' }]}>
-                Ver todo
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <SectionHeader
+            title="Resumen de Gastos"
+            actionText="Ver todo"
+            onActionPress={handleViewAllExpenses}
+          />
 
           <View style={styles.categoriesContainer}>
             {SPENDING_CATEGORIES.map((category) => (
-              <TouchableOpacity
+              <CategoryCard
                 key={category.id}
-                style={[CARD_STYLES.minimal, styles.categoryCard]}
-                activeOpacity={0.7}
-              >
-                <View style={LAYOUT.row}>
-                  <View style={[styles.categoryIcon, { backgroundColor: category.color + '20' }]}>
-                    <Ionicons name={category.icon} size={ICON_SIZE.md} color={category.color} />
-                  </View>
-                  <View style={{ flex: 1, marginLeft: SPACING.md }}>
-                    <Text style={TYPOGRAPHY.bodyBold}>{category.name}</Text>
-                    <Text style={[TYPOGRAPHY.caption, { marginTop: SPACING.xs }]}>
-                      {category.percentage}% del total
-                    </Text>
-                  </View>
-                  <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.text }]}>
-                    {formatCurrency(category.amount)}
-                  </Text>
-                </View>
-              </TouchableOpacity>
+                category={category}
+                onPress={() => console.log('Category pressed:', category.name)}
+              />
             ))}
           </View>
         </View>
 
         {/* Recent Transactions Section */}
         <View style={LAYOUT.section}>
-          <View style={LAYOUT.sectionHeader}>
-            <Text style={TYPOGRAPHY.h3}>Transacciones Recientes</Text>
-            <TouchableOpacity onPress={handleViewAllExpenses} activeOpacity={0.7}>
-              <Text style={[TYPOGRAPHY.caption, { color: COLORS.primary, fontWeight: '600' }]}>
-                Ver todo
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <SectionHeader
+            title="Transacciones Recientes"
+            actionText="Ver todo"
+            onActionPress={handleViewAllExpenses}
+          />
 
           {RECENT_TRANSACTIONS.map((transaction) => (
-            <TouchableOpacity
+            <TransactionCard
               key={transaction.id}
-              style={[CARD_STYLES.minimal, styles.transactionCard]}
-              activeOpacity={0.7}
+              transaction={transaction}
               onPress={() => handleTransactionPress(transaction.id)}
-            >
-              <View style={LAYOUT.rowBetween}>
-                <View style={LAYOUT.row}>
-                  <View style={[styles.transactionIcon, { backgroundColor: transaction.color + '20' }]}>
-                    <Ionicons name={transaction.icon} size={ICON_SIZE.md} color={transaction.color} />
-                  </View>
-                  <View style={{ marginLeft: SPACING.md }}>
-                    <Text style={TYPOGRAPHY.bodyBold}>{transaction.name}</Text>
-                    <Text style={[TYPOGRAPHY.caption, { marginTop: 2 }]}>
-                      {transaction.category}
-                    </Text>
-                  </View>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.error }]}>
-                    {transaction.amount < 0 ? '-' : '+'}{formatCurrency(transaction.amount)}
-                  </Text>
-                  <Text style={[TYPOGRAPHY.tiny, { marginTop: 2 }]}>
-                    {transaction.date}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
+            />
           ))}
         </View>
 
@@ -479,133 +284,58 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Project Options Bottom Sheet Modal */}
-      <Modal
+      <BottomSheet
         visible={isProjectOptionsModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={handleCloseProjectOptions}
+        onClose={handleCloseProjectOptions}
+        title={selectedProjectForOptions?.name}
       >
-        <Pressable
-          style={styles.modalOverlay}
+        <BottomSheetOption
+          icon="share-outline"
+          iconColor={COLORS.primary}
+          label="Compartir Proyecto"
+          onPress={handleShareProject}
+        />
+
+        <BottomSheetOption
+          icon="settings-outline"
+          label="Configuración"
+          onPress={handleProjectSettings}
+        />
+
+        <BottomSheetOption
+          icon="notifications-off-outline"
+          label="Silenciar Notificaciones"
+          onPress={handleMuteProject}
+        />
+
+        {selectedProjectForOptions?.isShared && (
+          <BottomSheetOption
+            icon="exit-outline"
+            label="Salir del Proyecto"
+            variant="warning"
+            onPress={handleLeaveProject}
+          />
+        )}
+
+        <BottomSheetOption
+          icon="trash-outline"
+          label="Eliminar Proyecto"
+          variant="danger"
+          showDivider={true}
+          onPress={handleDeleteProject}
+        />
+
+        {/* Cancel Button */}
+        <TouchableOpacity
+          style={styles.modalCancelButton}
           onPress={handleCloseProjectOptions}
+          activeOpacity={0.7}
         >
-          <Animated.View
-            style={[
-              styles.modalContent,
-              {
-                transform: [{
-                  translateY: slideAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [600, 0],
-                  }),
-                }],
-              },
-            ]}
-          >
-            <Pressable onPress={(e) => e.stopPropagation()}>
-            {/* Modal Header */}
-            <View style={styles.modalHeader}>
-              <View style={styles.modalHandle} />
-              {selectedProjectForOptions && (
-                <View style={styles.modalProjectInfo}>
-                  <View style={styles.modalProjectIcon}>
-                    <Ionicons
-                      name={selectedProjectForOptions.isShared ? "people" : "folder-outline"}
-                      size={ICON_SIZE.md}
-                      color={COLORS.text}
-                    />
-                  </View>
-                  <Text style={[TYPOGRAPHY.bodyBold, styles.modalProjectName]}>
-                    {selectedProjectForOptions.name}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Modal Options */}
-            <View style={styles.modalOptions}>
-              <TouchableOpacity
-                style={styles.modalOption}
-                onPress={handleShareProject}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.modalOptionIcon, { backgroundColor: COLORS.primary + '15' }]}>
-                  <Ionicons name="share-outline" size={ICON_SIZE.md} color={COLORS.primary} />
-                </View>
-                <Text style={[TYPOGRAPHY.body, styles.modalOptionText]}>
-                  Compartir Proyecto
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.modalOption}
-                onPress={handleProjectSettings}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.modalOptionIcon, { backgroundColor: COLORS.textSecondary + '15' }]}>
-                  <Ionicons name="settings-outline" size={ICON_SIZE.md} color={COLORS.textSecondary} />
-                </View>
-                <Text style={[TYPOGRAPHY.body, styles.modalOptionText]}>
-                  Configuración
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.modalOption}
-                onPress={handleMuteProject}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.modalOptionIcon, { backgroundColor: COLORS.textSecondary + '15' }]}>
-                  <Ionicons name="notifications-off-outline" size={ICON_SIZE.md} color={COLORS.textSecondary} />
-                </View>
-                <Text style={[TYPOGRAPHY.body, styles.modalOptionText]}>
-                  Silenciar Notificaciones
-                </Text>
-              </TouchableOpacity>
-
-              {selectedProjectForOptions?.isShared && (
-                <TouchableOpacity
-                  style={styles.modalOption}
-                  onPress={handleLeaveProject}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.modalOptionIcon, { backgroundColor: COLORS.warning + '15' }]}>
-                    <Ionicons name="exit-outline" size={ICON_SIZE.md} color={COLORS.warning} />
-                  </View>
-                  <Text style={[TYPOGRAPHY.body, styles.modalOptionText]}>
-                    Salir del Proyecto
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              <TouchableOpacity
-                style={[styles.modalOption, styles.modalOptionDanger]}
-                onPress={handleDeleteProject}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.modalOptionIcon, { backgroundColor: COLORS.error + '15' }]}>
-                  <Ionicons name="trash-outline" size={ICON_SIZE.md} color={COLORS.error} />
-                </View>
-                <Text style={[TYPOGRAPHY.body, styles.modalOptionTextDanger]}>
-                  Eliminar Proyecto
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Cancel Button */}
-            <TouchableOpacity
-              style={styles.modalCancelButton}
-              onPress={handleCloseProjectOptions}
-              activeOpacity={0.7}
-            >
-              <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.text }]}>
-                Cancelar
-              </Text>
-            </TouchableOpacity>
-            </Pressable>
-          </Animated.View>
-        </Pressable>
-      </Modal>
+          <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.text }]}>
+            Cancelar
+          </Text>
+        </TouchableOpacity>
+      </BottomSheet>
     </SafeAreaView>
   );
 }
@@ -620,117 +350,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: SPACING.xxxl,
-  },
-  projectSelectorWrapper: {
-    marginHorizontal: SPACING.xl,
-    marginTop: SPACING.sm,
-    marginBottom: SPACING.lg,
-  },
-  projectSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.md,
-    backgroundColor: COLORS.backgroundSecondary,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  projectInfo: {
-    flex: 1,
-  },
-  projectHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.xs,
-    marginBottom: SPACING.xs,
-  },
-  projectLabel: {
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
-  projectName: {
-    fontSize: 18,
-    marginBottom: SPACING.sm,
-
-    alignSelf: 'stretch'
-  },
-  collaboratorsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginTop: SPACING.xs,
-  },
-  avatarGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: RADIUS.round,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: COLORS.backgroundSecondary,
-  },
-  avatarText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.white,
-  },
-  collaboratorCount: {
-    color: COLORS.textSecondary,
-    fontWeight: '500',
-  },
-  projectsList: {
-    marginTop: SPACING.sm,
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: 'hidden',
-  },
-  projectItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  projectItemIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  projectItemInfo: {
-    flex: 1,
-  },
-  projectItemName: {
-    marginBottom: 2,
-  },
-  projectItemMeta: {
-    color: COLORS.textSecondary,
-  },
-  createProjectButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: SPACING.lg,
-    gap: SPACING.sm,
-    backgroundColor: COLORS.white,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  createProjectText: {
-    color: COLORS.primary,
   },
   header: {
     flexDirection: 'row',
@@ -756,81 +375,6 @@ const styles = StyleSheet.create({
   periodButton: {
     flex: 1,
   },
-  balanceCard: {
-    marginHorizontal: SPACING.xl,
-    marginBottom: SPACING.xl,
-  },
-  balanceLabel: {
-    color: COLORS.white,
-    opacity: 0.7,
-    fontWeight: '500',
-  },
-  balanceAmount: {
-    color: COLORS.white,
-    marginTop: SPACING.sm,
-    letterSpacing: -2,
-  },
-  balanceCurrency: {
-    color: COLORS.white,
-    opacity: 0.7,
-    marginTop: SPACING.xs,
-    fontWeight: '600',
-  },
-  balanceStats: {
-    flexDirection: 'row',
-    marginTop: SPACING.xl,
-    paddingTop: SPACING.lg,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.15)',
-  },
-  statItem: {
-    flex: 1,
-  },
-  statLabel: {
-    color: COLORS.white,
-    opacity: 0.6,
-    fontWeight: '500',
-  },
-  statAmount: {
-    color: COLORS.white,
-    marginTop: SPACING.xs,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    marginHorizontal: SPACING.lg,
-  },
-  comparisonContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: SPACING.md,
-    gap: SPACING.xs,
-  },
-  comparisonText: {
-    color: COLORS.white,
-    opacity: 0.7,
-    fontWeight: '600',
-  },
-  quickActionsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.xxxl,
-    gap: SPACING.md,
-  },
-  quickActionButton: {
-    flex: 1,
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  quickActionIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   categoriesContainer: {
     gap: SPACING.md,
   },
@@ -854,81 +398,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: RADIUS.xxl,
-    borderTopRightRadius: RADIUS.xxl,
-    paddingBottom: SPACING.xl,
-    ...SHADOWS.lg,
-  },
-  modalHeader: {
-    alignItems: 'center',
-    paddingTop: SPACING.md,
-    paddingBottom: SPACING.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  modalHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: COLORS.border,
-    borderRadius: RADIUS.round,
-    marginBottom: SPACING.lg,
-  },
-  modalProjectInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-  },
-  modalProjectIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalProjectName: {
-    fontSize: 18,
-  },
-  modalOptions: {
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.lg,
-  },
-  modalOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: SPACING.lg,
-    gap: SPACING.lg,
-  },
-  modalOptionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: RADIUS.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalOptionText: {
-    color: COLORS.text,
-    flex: 1,
-  },
-  modalOptionDanger: {
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    marginTop: SPACING.sm,
-  },
-  modalOptionTextDanger: {
-    color: COLORS.error,
-    flex: 1,
-  },
+  // Modal Cancel Button
   modalCancelButton: {
-    marginHorizontal: SPACING.xl,
     marginTop: SPACING.lg,
     paddingVertical: SPACING.lg,
     backgroundColor: COLORS.backgroundSecondary,

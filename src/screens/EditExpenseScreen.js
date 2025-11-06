@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 import DatePickerInput from '../components/forms/DatePickerInput';
+import { formatCurrency } from '../utils/formatters';
 
 const CATEGORIES = [
   { id: 1, name: 'Comida', icon: 'restaurant-outline', color: '#FF6B6B' },
@@ -47,14 +48,11 @@ export default function EditExpenseScreen() {
     setAmount(numericValue);
   };
 
-  const formatAmount = () => {
+  const getFormattedAmount = () => {
     if (!amount) return '$0.00';
     const num = parseFloat(amount);
     if (isNaN(num)) return '$0.00';
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-    }).format(num);
+    return formatCurrency(num, 'MXN');
   };
 
   const handleCancel = () => {
@@ -123,7 +121,7 @@ export default function EditExpenseScreen() {
                 maxLength={10}
               />
             </View>
-            <Text style={styles.amountFormatted}>{formatAmount()} MXN</Text>
+            <Text style={styles.amountFormatted}>{getFormattedAmount()} MXN</Text>
           </View>
 
           {/* Category Selection */}

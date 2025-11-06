@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,9 +9,10 @@ import {
   RADIUS,
   TYPOGRAPHY,
   CARD_STYLES,
-  BUTTON_STYLES,
   ICON_SIZE,
 } from '../constants';
+import { SearchBar, FilterPills } from '../components/ui';
+import { TransactionCard } from '../components/transactions';
 
 const FILTER_OPTIONS = ['Todo', 'Comida', 'Transporte', 'Entretenimiento', 'Compras'];
 
@@ -79,53 +80,20 @@ export default function ExpensesScreen() {
         </View>
 
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={ICON_SIZE.sm} color={COLORS.textSecondary} />
-          <TextInput
-            style={[TYPOGRAPHY.body, styles.searchInput]}
-            placeholder="Buscar transacciones..."
-            placeholderTextColor={COLORS.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} activeOpacity={0.7}>
-              <Ionicons name="close-circle" size={ICON_SIZE.sm} color={COLORS.textSecondary} />
-            </TouchableOpacity>
-          )}
-        </View>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Buscar transacciones..."
+          style={styles.searchBar}
+        />
 
         {/* Filter Pills */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
+        <FilterPills
+          options={FILTER_OPTIONS}
+          selected={selectedFilter}
+          onSelect={setSelectedFilter}
           style={styles.filtersScroll}
-          contentContainerStyle={styles.filtersContent}
-        >
-          {FILTER_OPTIONS.map((filter) => (
-            <TouchableOpacity
-              key={filter}
-              style={[
-                selectedFilter === filter ? BUTTON_STYLES.pillActive : BUTTON_STYLES.pill,
-                styles.filterPill,
-              ]}
-              onPress={() => setSelectedFilter(filter)}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  TYPOGRAPHY.caption,
-                  {
-                    color: selectedFilter === filter ? COLORS.white : COLORS.text,
-                    fontWeight: selectedFilter === filter ? '700' : '600',
-                  },
-                ]}
-              >
-                {filter}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        />
 
         {/* Transactions List */}
         <View style={styles.transactionsContainer}>
@@ -139,30 +107,12 @@ export default function ExpensesScreen() {
           </View>
 
           {filteredTransactions.map((transaction) => (
-            <TouchableOpacity
+            <TransactionCard
               key={transaction.id}
-              style={[CARD_STYLES.minimal, styles.transactionItem]}
-              activeOpacity={0.7}
+              transaction={transaction}
               onPress={() => handleTransactionPress(transaction.id)}
-            >
-              <View style={styles.transactionLeft}>
-                <View style={[styles.transactionIcon, { backgroundColor: transaction.color + '20' }]}>
-                  <Ionicons name={transaction.icon} size={ICON_SIZE.md} color={transaction.color} />
-                </View>
-                <View style={styles.transactionInfo}>
-                  <Text style={[TYPOGRAPHY.bodyBold, styles.transactionName]}>{transaction.name}</Text>
-                  <Text style={[TYPOGRAPHY.caption, styles.transactionMeta]}>
-                    {transaction.category} • {transaction.time}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.transactionRight}>
-                <Text style={[TYPOGRAPHY.bodyBold, styles.transactionAmount]}>
-                  -{formatCurrency(transaction.amount)}
-                </Text>
-                <Text style={[TYPOGRAPHY.tiny, styles.transactionDate]}>{transaction.date}</Text>
-              </View>
-            </TouchableOpacity>
+              showTime={true}
+            />
           ))}
         </View>
 
@@ -236,29 +186,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.15)',
     marginHorizontal: SPACING.lg,
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.backgroundSecondary,
+  searchBar: {
     marginHorizontal: SPACING.xl,
     marginBottom: SPACING.lg,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderRadius: RADIUS.md,
-    gap: SPACING.sm,
-  },
-  searchInput: {
-    flex: 1,
-    color: COLORS.text,
   },
   filtersScroll: {
     marginBottom: SPACING.xl,
-  },
-  filtersContent: {
-    paddingHorizontal: SPACING.xl,
-  },
-  filterPill: {
-    marginRight: SPACING.sm,
   },
   transactionsContainer: {
     paddingHorizontal: SPACING.xl,
@@ -274,44 +207,6 @@ const styles = StyleSheet.create({
   },
   transactionsTotal: {
     color: COLORS.text,
-  },
-  transactionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  transactionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  transactionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: RADIUS.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  transactionInfo: {
-    flex: 1,
-  },
-  transactionName: {
-    marginBottom: SPACING.xs,
-  },
-  transactionMeta: {
-    color: COLORS.textSecondary,
-  },
-  transactionRight: {
-    alignItems: 'flex-end',
-  },
-  transactionAmount: {
-    color: COLORS.error,
-    marginBottom: SPACING.xs,
-  },
-  transactionDate: {
-    color: COLORS.textSecondary,
   },
   bottomPadding: {
     height: 100,
