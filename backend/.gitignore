@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Credenciales (IMPORTANTE - NO SUBIR)
+.env
+google-credentials.json
+*.json
+
+# Excepciones (estos JSON sí se pueden subir)
+!requirements.txt
+!package.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ML Models (pueden ser pesados)
+*.pkl
+*.h5
+*.model
+models/*.pkl
+
+# Temp files
+tmp/
+temp/
+*.tmp

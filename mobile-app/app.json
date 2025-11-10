@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "FinanzApp",
+    "slug": "finanzapp-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "finanzapp",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.finanzapp.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.finanzapp.mobile"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "supabaseUrl": "https://tzbavdowvcwhbilzvdwi.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6YmF2ZG93dmN3aGJpbHp2ZHdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0NjcwODIsImV4cCI6MjA3ODA0MzA4Mn0.9O-ZwePpU8-KS0DfkzBbo9vQxDPr1GVQ7weFwDCnjt4",
+      "apiBaseUrl": "http://192.168.1.243:8000",
+      "appEnv": "development"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permitir a $(PRODUCT_NAME) acceder a tu cámara para escanear tickets."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permitir a $(PRODUCT_NAME) acceder a tus fotos para seleccionar tickets."
+        }
+      ]
+    ]
+  }
+}

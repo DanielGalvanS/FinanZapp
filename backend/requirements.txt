@@ -1,0 +1,33 @@
+# ===== SERVIDOR =====
+fastapi
+uvicorn[standard]
+
+# ===== BASE DE DATOS =====
+supabase
+# Supabase ya maneja todo, no necesitamos SQLAlchemy
+
+# ===== AUTENTICACIÓN =====
+python-jose[cryptography]
+passlib[bcrypt]
+python-dotenv
+
+# ===== VALIDACIÓN =====
+pydantic
+pydantic-settings
+email-validator
+
+# ===== MACHINE LEARNING (El valor real) =====
+scikit-learn
+xgboost
+prophet
+pandas
+numpy
+
+# ===== OCR (El otro valor clave) =====
+google-cloud-documentai
+pillow
+
+# ===== UTILIDADES =====
+python-dateutil
+
+python-multipart
