@@ -12,6 +12,7 @@ from app.utils.mexico_utils import (
 )
 from app.database import get_db
 from app.services.storage_service import storage_service
+from app.services.ocr_postprocessor import ocr_postprocessor
 from supabase import Client
 import tempfile
 import os
@@ -48,12 +49,30 @@ async def scan_receipt(file: UploadFile = File(...)):
         if not ocr_result.get("success"):
             raise HTTPException(status_code=400, detail=ocr_result.get("error"))
 
-        extracted = ocr_result["extracted_data"]
+        # Post-procesamiento INTELIGENTE (nivel enterprise)
+        enhanced_data = ocr_postprocessor.process(ocr_result, ocr_result["full_text"])
+
+        # Usar datos mejorados
+        extracted = {
+            **ocr_result["extracted_data"],
+            'merchant_name': enhanced_data['merchant_name'],
+            'rfc': enhanced_data['rfc'],
+            'total_amount': enhanced_data['total_amount'],
+            'date': enhanced_data['date'],
+        }
 
         # Post-procesamiento con utilidades de México
         response = {
             "full_text": ocr_result["full_text"],
             "extracted": extracted,
+            "confidence": enhanced_data['overall_confidence'],
+            "confidence_breakdown": {
+                "merchant": enhanced_data['merchant_confidence'],
+                "rfc": enhanced_data['rfc_confidence'],
+                "amount": enhanced_data['amount_confidence'],
+                "date": enhanced_data['date_confidence'],
+                "category": enhanced_data['category_confidence'],
+            },
         }
 
         # Validar RFC si existe
@@ -83,12 +102,9 @@ async def scan_receipt(file: UploadFile = File(...)):
                 from app.utils.mexico_utils import extract_iva_from_total
                 response["tax_breakdown"] = extract_iva_from_total(total)
 
-        # Sugerir categoría basada en comercio
-        if extracted.get("merchant_name"):
-            suggested_category = suggest_category_from_merchant(extracted["merchant_name"])
-            response["suggested_category"] = suggested_category or "Sin categoría"
-        else:
-            response["suggested_category"] = "Sin categoría"
+        # Sugerir categoría (usar el mejorado del post-processor)
+        response["suggested_category"] = enhanced_data['suggested_category']
+        response["category_confidence"] = enhanced_data['category_confidence']
 
         # Verificar si es deducible
         has_rfc = response["rfc_validation"].get("valid", False)
@@ -191,9 +207,19 @@ async def scan_and_create_expense(
         if not ocr_result.get("success"):
             raise HTTPException(status_code=400, detail=ocr_result.get("error"))
 
-        extracted = ocr_result["extracted_data"]
+        # PASO 2: Post-procesamiento INTELIGENTE (nivel enterprise)
+        enhanced_data = ocr_postprocessor.process(ocr_result, ocr_result["full_text"])
 
-        # PASO 2: Post-procesamiento con utilidades de México
+        # Usar datos mejorados en lugar de los originales
+        extracted = {
+            **ocr_result["extracted_data"],
+            'merchant_name': enhanced_data['merchant_name'],
+            'rfc': enhanced_data['rfc'],
+            'total_amount': enhanced_data['total_amount'],
+            'date': enhanced_data['date'],
+        }
+
+        # PASO 3: Post-procesamiento adicional con utilidades de México
         # Validar RFC si existe
         rfc_validation = {"valid": False, "error": "No se encontró RFC"}
         if extracted.get("rfc"):
@@ -215,10 +241,9 @@ async def scan_and_create_expense(
                 from app.utils.mexico_utils import extract_iva_from_total
                 tax_breakdown = extract_iva_from_total(total)
 
-        # Sugerir categoría
-        suggested_category = "Sin categoría"
-        if extracted.get("merchant_name"):
-            suggested_category = suggest_category_from_merchant(extracted["merchant_name"])
+        # Sugerir categoría (usar el mejorado del post-processor)
+        suggested_category = enhanced_data['suggested_category']
+        category_confidence = enhanced_data['category_confidence']
 
         # Verificar deducibilidad
         has_rfc = rfc_validation.get("valid", False)
@@ -236,6 +261,24 @@ async def scan_and_create_expense(
         # Usar datos extraídos o valores por defecto
         expense_name = extracted.get("merchant_name") or "Gasto sin nombre"
         expense_amount = extracted.get("total_amount") if extracted.get("total_amount") else 0.01  # Mínimo 0.01
+
+        # NUEVO: Mapear categoría sugerida a category_id en la BD
+        category_id = None
+        if suggested_category and suggested_category != "Sin categoría" and suggested_category != "Otros":
+            try:
+                # Buscar categoría en la BD por nombre
+                category_result = db.table("categories")\
+                    .select("id")\
+                    .eq("name", suggested_category)\
+                    .eq("is_system", True)\
+                    .limit(1)\
+                    .execute()
+
+                if category_result.data and len(category_result.data) > 0:
+                    category_id = category_result.data[0]["id"]
+            except Exception as e:
+                print(f"Error al buscar categoría: {e}")
+                # Si falla, dejamos category_id como None
 
         # Validar y limpiar fecha
         expense_date = None
@@ -259,7 +302,7 @@ async def scan_and_create_expense(
         expense_data = {
             "user_id": temp_user_id,
             "project_id": project_id,
-            "category_id": None,  # TODO: Mapear suggested_category a category_id
+            "category_id": category_id,  # Ya está mapeado arriba
             "name": expense_name,
             "description": f"Escaneado automáticamente - {extracted.get('merchant_address', '')}".strip(),
             "amount": str(expense_amount),
@@ -300,7 +343,7 @@ async def scan_and_create_expense(
             }
             db.table("receipts").insert(receipt_data).execute()
 
-        # PASO 7: Retornar respuesta completa
+        # PASO 7: Retornar respuesta completa con datos mejorados
         return {
             "success": True,
             "message": "Expense creado automáticamente desde recibo",
@@ -310,11 +353,22 @@ async def scan_and_create_expense(
             "ocr_data": {
                 "extracted": extracted,
                 "full_text": ocr_result["full_text"],
-                "confidence": ocr_result.get("confidence", 0.0),
+                "confidence": enhanced_data['overall_confidence'],  # Confidence mejorado
                 "rfc_validation": rfc_validation,
                 "tax_breakdown": tax_breakdown,
                 "suggested_category": suggested_category,
-                "deductible_info": deductible_info
+                "category_confidence": category_confidence,
+                "deductible_info": deductible_info,
+                # Confidence scores detallados
+                "confidence_breakdown": {
+                    "merchant": enhanced_data['merchant_confidence'],
+                    "rfc": enhanced_data['rfc_confidence'],
+                    "amount": enhanced_data['amount_confidence'],
+                    "date": enhanced_data['date_confidence'],
+                    "category": enhanced_data['category_confidence'],
+                    "overall": enhanced_data['overall_confidence'],
+                },
+                "processing_method": enhanced_data['processing_method']
             }
         }
 

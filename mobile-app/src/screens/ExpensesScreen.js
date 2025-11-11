@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,7 +13,8 @@ import {
 } from '../constants';
 import { SearchBar, FilterPills } from '../components/ui';
 import { TransactionCard } from '../components/transactions';
-import useExpenseStore from '../store/expenseStore';
+import useDataStore from '../store/dataStore';
+import dataService from '../services/dataService';
 import { formatCurrency, formatDate } from '../utils/formatters';
 
 const FILTER_OPTIONS = ['Todo', 'Comida', 'Transporte', 'Entretenimiento', 'Compras', 'Salud', 'Educación'];
@@ -32,25 +33,60 @@ export default function ExpensesScreen() {
   const [selectedFilter, setSelectedFilter] = useState('Todo');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Obtener gastos del store
-  const expenses = useExpenseStore((state) => state.expenses);
+  // Obtener proyecto actual y categorías del store
+  const currentProject = useDataStore((state) => state.currentProject);
+  const categories = useDataStore((state) => state.categories);
+
+  // Estado para expenses cargados desde Supabase
+  const [expenses, setExpenses] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Cargar expenses cuando cambia el proyecto
+  useEffect(() => {
+    if (currentProject) {
+      loadExpenses();
+    }
+  }, [currentProject]);
+
+  const loadExpenses = async () => {
+    if (!currentProject) return;
+
+    try {
+      setIsLoading(true);
+
+      // Obtener expenses del proyecto actual desde Supabase
+      const filters = { projectId: currentProject.id };
+      const expensesData = await dataService.getExpenses(filters);
+
+      setExpenses(expensesData);
+      console.log('[ExpensesScreen] Gastos cargados:', expensesData.length);
+    } catch (error) {
+      console.error('[ExpensesScreen] Error al cargar gastos:', error);
+      setExpenses([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleTransactionPress = (transactionId) => {
     router.push(`/expense-detail/${transactionId}`);
   };
 
   // Transformar expenses para el formato esperado por TransactionCard
-  const transformedExpenses = expenses.map((expense) => ({
-    id: expense.id,
-    name: expense.name,
-    category: expense.categoryName || 'Sin categoría',
-    amount: -parseFloat(expense.amount),
-    date: formatDate(expense.date, 'short'),
-    time: new Date(expense.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
-    icon: expense.categoryIcon || 'cash-outline',
-    color: CATEGORY_COLORS[expense.categoryName] || COLORS.textSecondary,
-    project: expense.projectName || 'Personal',
-  }));
+  const transformedExpenses = expenses.map((expense) => {
+    const category = categories.find(cat => cat.id === expense.category_id);
+    return {
+      id: expense.id,
+      name: expense.name,
+      category: category?.name || 'Sin categoría',
+      amount: -parseFloat(expense.amount),
+      date: formatDate(expense.date, 'short'),
+      time: new Date(expense.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+      icon: category?.icon || 'cash-outline',
+      color: CATEGORY_COLORS[category?.name] || COLORS.textSecondary,
+      project: currentProject?.name || 'Personal',
+    };
+  });
 
   // Filtrar transacciones
   const filteredTransactions = transformedExpenses.filter((transaction) => {
@@ -117,7 +153,14 @@ export default function ExpensesScreen() {
             </Text>
           </View>
 
-          {filteredTransactions.length > 0 ? (
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={[TYPOGRAPHY.body, { marginTop: SPACING.md, color: COLORS.textSecondary }]}>
+                Cargando gastos...
+              </Text>
+            </View>
+          ) : filteredTransactions.length > 0 ? (
             filteredTransactions.map((transaction) => (
               <TransactionCard
                 key={transaction.id}
@@ -135,7 +178,7 @@ export default function ExpensesScreen() {
               <Text style={[TYPOGRAPHY.body, styles.emptyText]}>
                 {searchQuery || selectedFilter !== 'Todo'
                   ? 'No se encontraron gastos con los filtros aplicados'
-                  : 'Comienza agregando tu primer gasto'}
+                  : `Comienza agregando gastos al proyecto "${currentProject?.name}"`}
               </Text>
             </View>
           )}
@@ -246,6 +289,10 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: 'center',
     paddingHorizontal: SPACING.xl,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: SPACING.xxxl * 2,
   },
   bottomPadding: {
     height: 100,

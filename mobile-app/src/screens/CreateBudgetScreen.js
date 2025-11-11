@@ -13,18 +13,14 @@ import {
 } from '../constants';
 import { Header, Input } from '../components/ui';
 import { required, positiveNumber, compose } from '../utils/validators';
-
-const CATEGORIES = [
-  { id: 1, name: 'Comida', icon: 'restaurant-outline', color: COLORS.categoryFood },
-  { id: 2, name: 'Transporte', icon: 'car-outline', color: COLORS.categoryTransport },
-  { id: 3, name: 'Entretenimiento', icon: 'game-controller-outline', color: COLORS.categoryEntertainment },
-  { id: 4, name: 'Compras', icon: 'cart-outline', color: COLORS.categoryShopping },
-  { id: 5, name: 'Salud', icon: 'medkit-outline', color: COLORS.categoryHealth },
-  { id: 6, name: 'Educación', icon: 'book-outline', color: COLORS.categoryEducation },
-];
+import useDataStore from '../store/dataStore';
 
 export default function CreateBudgetScreen() {
   const router = useRouter();
+
+  // Datos desde el store global
+  const categories = useDataStore((state) => state.categories);
+
   const [amount, setAmount] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [errors, setErrors] = useState({});
@@ -108,7 +104,7 @@ export default function CreateBudgetScreen() {
             </Text>
 
             <View style={styles.categoriesGrid}>
-              {CATEGORIES.map((category) => (
+              {categories.map((category) => (
                 <TouchableOpacity
                   key={category.id}
                   style={[

@@ -35,7 +35,7 @@ export default function ProjectSelector({
           <Text style={[TYPOGRAPHY.bodyBold, styles.projectName]}>
             {currentProject.name}
           </Text>
-          {currentProject.isShared && currentProject.collaborators.length > 0 && (
+          {currentProject.isShared && currentProject.collaborators?.length > 0 && (
             <CollaboratorAvatarGroup
               collaborators={currentProject.collaborators}
               size={24}
@@ -74,7 +74,7 @@ export default function ProjectSelector({
                     {project.name}
                   </Text>
                   <Text style={[TYPOGRAPHY.caption, styles.projectItemMeta]}>
-                    {project.isShared && project.collaborators.length > 0
+                    {project.isShared && project.collaborators?.length > 0
                       ? `${project.collaborators.length} colaborador${project.collaborators.length > 1 ? 'es' : ''}`
                       : 'Personal'
                     }

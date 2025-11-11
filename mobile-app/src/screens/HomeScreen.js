@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,22 +19,8 @@ import { ProjectCard } from '../components/projects';
 import { TransactionCard } from '../components/transactions';
 import { CategoryCard } from '../components/categories';
 import { BalanceCard, QuickActions, ProjectSelector } from '../components/home';
-
-// Datos de ejemplo
-const SPENDING_CATEGORIES = [
-  { id: 1, name: 'Comida', amount: 12450, icon: 'restaurant-outline', color: COLORS.categoryFood, percentage: 30 },
-  { id: 2, name: 'Transporte', amount: 8320, icon: 'car-outline', color: COLORS.categoryTransport, percentage: 20 },
-  { id: 3, name: 'Entretenimiento', amount: 5670, icon: 'game-controller-outline', color: COLORS.categoryEntertainment, percentage: 14 },
-  { id: 4, name: 'Compras', amount: 15890, icon: 'cart-outline', color: COLORS.categoryShopping, percentage: 36 },
-];
-
-const RECENT_TRANSACTIONS = [
-  { id: 1, name: 'Uber', category: 'Transporte', amount: -120, date: '27/10/2025', icon: 'car-outline', color: COLORS.categoryTransport },
-  { id: 2, name: 'Oxxo', category: 'Comida', amount: -85.50, date: '27/10/2025', icon: 'restaurant-outline', color: COLORS.categoryFood },
-  { id: 3, name: 'Netflix', category: 'Entretenimiento', amount: -199, date: '26/10/2025', icon: 'game-controller-outline', color: COLORS.categoryEntertainment },
-  { id: 4, name: 'Amazon', category: 'Compras', amount: -1250, date: '26/10/2025', icon: 'cart-outline', color: COLORS.categoryShopping },
-  { id: 5, name: 'Starbucks', category: 'Comida', amount: -145, date: '25/10/2025', icon: 'restaurant-outline', color: COLORS.categoryFood },
-];
+import useDataStore from '../store/dataStore';
+import dataService from '../services/dataService';
 
 const PERIODS = [
   { id: 'month', label: 'Este Mes' },
@@ -49,51 +35,111 @@ const QUICK_ACTIONS = [
   { id: 'cards', label: 'Tarjetas', icon: 'card-outline', route: '/cards' },
 ];
 
-// Datos de proyectos (ejemplo)
-const AVAILABLE_PROJECTS = [
-  {
-    id: 1,
-    name: 'Personal',
-    isShared: false,
-    collaborators: [],
-    totalExpenses: 42330,
-  },
-  {
-    id: 2,
-    name: 'Renta Depa',
-    isShared: true,
-    collaborators: [
-      { id: 1, name: 'María García', avatar: null },
-      { id: 2, name: 'Juan Pérez', avatar: null },
-      { id: 3, name: 'Ana López', avatar: null },
-    ],
-    totalExpenses: 18500,
-  },
-  {
-    id: 3,
-    name: 'Negocio',
-    isShared: true,
-    collaborators: [
-      { id: 4, name: 'Carlos Ruiz', avatar: null },
-    ],
-    totalExpenses: 156780,
-  },
-  {
-    id: 4,
-    name: 'Vacaciones',
-    isShared: false,
-    collaborators: [],
-    totalExpenses: 8920,
-  },
-];
-
 export default function HomeScreen() {
   const router = useRouter();
+
+  // Datos desde el store global
+  const projects = useDataStore((state) => state.projects);
+  const categories = useDataStore((state) => state.categories);
+  const currentProject = useDataStore((state) => state.currentProject);
+  const setCurrentProject = useDataStore((state) => state.setCurrentProject);
+  const isLoadingProjects = useDataStore((state) => state.isLoadingProjects);
+
+  // Estado local
   const [selectedPeriod, setSelectedPeriod] = useState('month');
-  const [currentProject, setCurrentProject] = useState(AVAILABLE_PROJECTS[1]);
   const [isProjectSelectorExpanded, setIsProjectSelectorExpanded] = useState(false);
   const [isProjectOptionsModalVisible, setIsProjectOptionsModalVisible] = useState(false);
   const [selectedProjectForOptions, setSelectedProjectForOptions] = useState(null);
+
+  // Estado para datos cargados desde Supabase
+  const [expenses, setExpenses] = useState([]);
+  const [isLoadingExpenses, setIsLoadingExpenses] = useState(true);
+  const [spendingByCategory, setSpendingByCategory] = useState([]);
+  const [recentTransactions, setRecentTransactions] = useState([]);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+
+  // Cargar expenses cuando cambia el proyecto o período
+  useEffect(() => {
+    if (currentProject) {
+      loadExpenses();
+    }
+  }, [currentProject, selectedPeriod]);
+
+  const loadExpenses = async () => {
+    if (!currentProject) return;
+
+    try {
+      setIsLoadingExpenses(true);
+
+      // Obtener expenses del proyecto actual
+      const filters = { projectId: currentProject.id };
+      const expensesData = await dataService.getExpenses(filters);
+
+      setExpenses(expensesData);
+
+      // Calcular gastos por categoría
+      calculateSpendingByCategory(expensesData);
+
+      // Obtener transacciones recientes (últimas 5)
+      const recent = expensesData.slice(0, 5).map(expense => {
+        const category = categories.find(cat => cat.id === expense.category_id);
+        return {
+          id: expense.id,
+          name: expense.name,
+          category: category?.name || 'Sin categoría',
+          amount: -expense.amount, // Negativo para gastos
+          date: new Date(expense.date).toLocaleDateString('es-MX'),
+          icon: category?.icon || 'pricetag-outline',
+          color: category?.color || COLORS.textSecondary,
+        };
+      });
+      setRecentTransactions(recent);
+
+      // Calcular total de gastos
+      const total = expensesData.reduce((sum, expense) => sum + expense.amount, 0);
+      setTotalExpenses(total);
+
+    } catch (error) {
+      console.error('[HomeScreen] Error al cargar expenses:', error);
+    } finally {
+      setIsLoadingExpenses(false);
+    }
+  };
+
+  const calculateSpendingByCategory = (expensesData) => {
+    // Agrupar gastos por categoría
+    const categoryTotals = {};
+    let total = 0;
+
+    expensesData.forEach(expense => {
+      const categoryId = expense.category_id;
+      if (!categoryTotals[categoryId]) {
+        categoryTotals[categoryId] = 0;
+      }
+      categoryTotals[categoryId] += expense.amount;
+      total += expense.amount;
+    });
+
+    // Convertir a array con información de categoría
+    const spending = Object.entries(categoryTotals).map(([categoryId, amount]) => {
+      const category = categories.find(cat => cat.id === categoryId);
+      const percentage = total > 0 ? Math.round((amount / total) * 100) : 0;
+
+      return {
+        id: categoryId,
+        name: category?.name || 'Sin categoría',
+        amount: amount,
+        icon: category?.icon || 'pricetag-outline',
+        color: category?.color || COLORS.textSecondary,
+        percentage: percentage,
+      };
+    });
+
+    // Ordenar por monto (mayor a menor)
+    spending.sort((a, b) => b.amount - a.amount);
+
+    setSpendingByCategory(spending);
+  };
 
   const handleTransactionPress = (transactionId) => {
     router.push(`/expense-detail/${transactionId}`);
@@ -116,6 +162,12 @@ export default function HomeScreen() {
   const handleSelectProject = (project) => {
     setCurrentProject(project);
     setIsProjectSelectorExpanded(false);
+  };
+
+  const handleRefresh = () => {
+    if (currentProject) {
+      loadExpenses();
+    }
   };
 
   const handleCreateProject = () => {
@@ -167,6 +219,58 @@ export default function HomeScreen() {
     }
   };
 
+  // Mostrar loading mientras se cargan proyectos
+  if (isLoadingProjects) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={[TYPOGRAPHY.body, { marginTop: SPACING.md, color: COLORS.textSecondary }]}>
+            Cargando proyectos...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Mostrar mensaje si no hay proyectos
+  if (!isLoadingProjects && projects.length === 0) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.emptyStateContainer}>
+          <Ionicons name="folder-open-outline" size={80} color={COLORS.textTertiary} />
+          <Text style={[TYPOGRAPHY.h2, { marginTop: SPACING.xl, marginBottom: SPACING.sm }]}>
+            Sin proyectos
+          </Text>
+          <Text style={[TYPOGRAPHY.body, { color: COLORS.textSecondary, textAlign: 'center', marginBottom: SPACING.xl }]}>
+            Crea tu primer proyecto para empezar a rastrear tus gastos
+          </Text>
+          <TouchableOpacity
+            style={[BUTTON_STYLES.accent, { paddingHorizontal: SPACING.xxl }]}
+            onPress={() => router.push('/create-project')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="add" size={ICON_SIZE.md} color={COLORS.white} style={{ marginRight: SPACING.sm }} />
+            <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.white }]}>
+              Crear Proyecto
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Mostrar loading si no hay proyecto seleccionado (no debería pasar)
+  if (!currentProject) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
@@ -177,7 +281,7 @@ export default function HomeScreen() {
         {/* Project Selector */}
         <ProjectSelector
           currentProject={currentProject}
-          projects={AVAILABLE_PROJECTS}
+          projects={projects}
           isExpanded={isProjectSelectorExpanded}
           onToggleExpanded={handleProjectPress}
           onSelectProject={handleSelectProject}
@@ -229,11 +333,11 @@ export default function HomeScreen() {
 
         {/* Balance Card */}
         <BalanceCard
-          balance={651972}
-          income={85420}
-          expenses={42330}
-          comparison="12% menos que el mes pasado"
-          comparisonTrend="down"
+          balance={0} // TODO: Implementar balance real
+          income={0} // TODO: Implementar ingresos reales
+          expenses={totalExpenses}
+          comparison="" // TODO: Implementar comparación con período anterior
+          comparisonTrend="neutral"
           currency="MXN"
         />
 
@@ -251,15 +355,31 @@ export default function HomeScreen() {
             onActionPress={handleViewAllExpenses}
           />
 
-          <View style={styles.categoriesContainer}>
-            {SPENDING_CATEGORIES.map((category) => (
-              <CategoryCard
-                key={category.id}
-                category={category}
-                onPress={() => console.log('Category pressed:', category.name)}
-              />
-            ))}
-          </View>
+          {isLoadingExpenses ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+              <Text style={[TYPOGRAPHY.body, { marginTop: SPACING.sm, color: COLORS.textSecondary }]}>
+                Cargando gastos...
+              </Text>
+            </View>
+          ) : spendingByCategory.length > 0 ? (
+            <View style={styles.categoriesContainer}>
+              {spendingByCategory.slice(0, 4).map((category) => (
+                <CategoryCard
+                  key={category.id}
+                  category={category}
+                  onPress={() => console.log('Category pressed:', category.name)}
+                />
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="receipt-outline" size={48} color={COLORS.textTertiary} />
+              <Text style={[TYPOGRAPHY.body, { marginTop: SPACING.md, color: COLORS.textSecondary }]}>
+                No hay gastos en este proyecto
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Recent Transactions Section */}
@@ -270,13 +390,26 @@ export default function HomeScreen() {
             onActionPress={handleViewAllExpenses}
           />
 
-          {RECENT_TRANSACTIONS.map((transaction) => (
-            <TransactionCard
-              key={transaction.id}
-              transaction={transaction}
-              onPress={() => handleTransactionPress(transaction.id)}
-            />
-          ))}
+          {isLoadingExpenses ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            </View>
+          ) : recentTransactions.length > 0 ? (
+            recentTransactions.map((transaction) => (
+              <TransactionCard
+                key={transaction.id}
+                transaction={transaction}
+                onPress={() => handleTransactionPress(transaction.id)}
+              />
+            ))
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="time-outline" size={48} color={COLORS.textTertiary} />
+              <Text style={[TYPOGRAPHY.body, { marginTop: SPACING.md, color: COLORS.textSecondary }]}>
+                No hay transacciones recientes
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Bottom padding for tab bar */}
@@ -405,5 +538,21 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.backgroundSecondary,
     borderRadius: RADIUS.lg,
     alignItems: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyContainer: {
+    paddingVertical: SPACING.xxxl,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.xxl,
   },
 });

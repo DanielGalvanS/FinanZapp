@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,8 @@ import { formatCurrency } from '../utils/formatters';
 import { ReceiptGallery, ReceiptViewer } from '../components/receipts';
 import { CommentInput } from '../components/comments';
 import useExpenseStore from '../store/expenseStore';
+import useDataStore from '../store/dataStore';
+import dataService from '../services/dataService';
 
 // Datos de ejemplo - En producción vendrían como parámetros de navegación
 const EXPENSE_DATA = {
@@ -55,13 +57,74 @@ export default function ExpenseDetailScreen() {
   const deleteExpense = useExpenseStore((state) => state.deleteExpense);
   const addComment = useExpenseStore((state) => state.addComment);
   const deleteComment = useExpenseStore((state) => state.deleteComment);
+  const categories = useDataStore((state) => state.categories);
 
-  const expenseFromStore = getExpenseById(id);
+  const [expense, setExpense] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [viewingReceipt, setViewingReceipt] = useState(null);
-  const [mentionUser, setMentionUser] = useState(null);
 
-  // Si no se encuentra el gasto, usar datos de ejemplo
-  const expense = expenseFromStore || EXPENSE_DATA;
+  // Intentar cargar expense desde store o Supabase
+  useEffect(() => {
+    loadExpense();
+  }, [id]);
+
+  const loadExpense = async () => {
+    try {
+      setIsLoading(true);
+
+      // Primero intentar del store local
+      const expenseFromStore = getExpenseById(id);
+
+      if (expenseFromStore) {
+        console.log('[ExpenseDetail] Expense encontrado en store:', expenseFromStore);
+        setExpense(expenseFromStore);
+        setIsLoading(false);
+        return;
+      }
+
+      // Si no está en el store, cargar desde Supabase
+      console.log('[ExpenseDetail] Cargando expense desde Supabase, ID:', id);
+      const expenses = await dataService.getExpenses();
+      const foundExpense = expenses.find(exp => exp.id === id);
+
+      if (foundExpense) {
+        // Transformar a formato que usa la app
+        const category = categories.find(cat => cat.id === foundExpense.category_id);
+        const expenseFormatted = {
+          id: foundExpense.id,
+          name: foundExpense.name,
+          amount: foundExpense.amount,
+          categoryId: foundExpense.category_id,
+          categoryName: category?.name || 'Sin categoría',
+          categoryIcon: category?.icon || 'pricetag-outline',
+          categoryColor: category?.color || COLORS.textSecondary,
+          category: category ? {
+            name: category.name,
+            icon: category.icon,
+            color: category.color,
+          } : null,
+          projectId: foundExpense.project_id,
+          description: foundExpense.description,
+          date: foundExpense.date,
+          receipts: foundExpense.receipts || [],
+          comments: foundExpense.comments || [],
+        };
+
+        console.log('[ExpenseDetail] Expense cargado desde Supabase:', expenseFormatted);
+        setExpense(expenseFormatted);
+      } else {
+        console.warn('[ExpenseDetail] Expense no encontrado:', id);
+        setExpense(null);
+      }
+    } catch (error) {
+      console.error('[ExpenseDetail] Error al cargar expense:', error);
+      setExpense(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const [mentionUser, setMentionUser] = useState(null);
 
   const handleBack = () => {
     router.back();
@@ -168,6 +231,51 @@ export default function ExpenseDetailScreen() {
     setViewingReceipt(receipt);
   };
 
+  // Mostrar loading
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Detalle del Gasto</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={[styles.infoValue, { marginTop: 16, color: COLORS.textSecondary }]}>
+            Cargando detalles...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Mostrar error si no se encuentra
+  if (!expense) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Detalle del Gasto</Text>
+          <View style={styles.placeholder} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color={COLORS.textTertiary} />
+          <Text style={[styles.amount, { fontSize: 20, marginTop: 16 }]}>
+            Gasto no encontrado
+          </Text>
+          <Text style={[styles.infoValue, { marginTop: 8, color: COLORS.textSecondary }]}>
+            No se pudo cargar la información del gasto
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <KeyboardAvoidingView
@@ -205,17 +313,21 @@ export default function ExpenseDetailScreen() {
 
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Categoría</Text>
-              <View style={styles.categoryBadge}>
-                <View style={[styles.categoryIcon, { backgroundColor: expense.category.color + '20' }]}>
-                  <Ionicons name={expense.category.icon} size={18} color={expense.category.color} />
+              {expense.category ? (
+                <View style={styles.categoryBadge}>
+                  <View style={[styles.categoryIcon, { backgroundColor: expense.category.color + '20' }]}>
+                    <Ionicons name={expense.category.icon} size={18} color={expense.category.color} />
+                  </View>
+                  <Text style={styles.categoryName}>{expense.category.name}</Text>
                 </View>
-                <Text style={styles.categoryName}>{expense.category.name}</Text>
-              </View>
+              ) : (
+                <Text style={styles.infoValue}>Sin categoría</Text>
+              )}
             </View>
 
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Proyecto</Text>
-              <Text style={styles.infoValue}>{expense.project.name}</Text>
+              <Text style={styles.infoValue}>{expense.project?.name || 'Sin proyecto'}</Text>
             </View>
 
             <View style={styles.infoRow}>
@@ -657,5 +769,11 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 40,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 80,
   },
 });

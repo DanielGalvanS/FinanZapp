@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, Text } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,8 @@ import {
   TYPOGRAPHY,
 } from '../constants';
 import { Header, Input, IconPicker } from '../components/ui';
+import dataService from '../services/dataService';
+import useDataStore from '../store/dataStore';
 
 const PROJECT_ICONS = [
   { id: 1, icon: 'folder-outline', color: COLORS.primary },
@@ -25,31 +27,59 @@ const PROJECT_ICONS = [
 
 export default function CreateProjectScreen() {
   const router = useRouter();
+  const addProject = useDataStore((state) => state.addProject);
+  const refreshProjects = useDataStore((state) => state.refreshProjects);
+
   const [projectName, setProjectName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedIcon, setSelectedIcon] = useState(PROJECT_ICONS[0]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleBack = () => {
     router.back();
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!projectName.trim()) {
       Alert.alert('Campo requerido', 'Por favor ingresa un nombre para el proyecto');
       return;
     }
 
-    console.log('Creating project:', {
-      name: projectName,
-      description,
-      icon: selectedIcon,
-    });
+    try {
+      setIsSaving(true);
 
-    Alert.alert(
-      'Proyecto Creado',
-      `Proyecto "${projectName}" creado exitosamente`,
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
+      // Crear proyecto en Supabase
+      const newProject = await dataService.createProject({
+        name: projectName.trim(),
+        description: description.trim(),
+        icon: selectedIcon.icon,
+        color: selectedIcon.color,
+        isShared: false,
+      });
+
+      console.log('[CreateProject] Proyecto creado:', newProject);
+
+      // Agregar al store local inmediatamente
+      addProject(newProject);
+
+      // Refrescar proyectos desde Supabase para sincronizar
+      await refreshProjects();
+
+      Alert.alert(
+        'Proyecto Creado',
+        `Proyecto "${projectName}" creado exitosamente`,
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (error) {
+      console.error('[CreateProject] Error al crear proyecto:', error);
+      Alert.alert(
+        'Error',
+        'No se pudo crear el proyecto. Intenta de nuevo.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -106,16 +136,27 @@ export default function CreateProjectScreen() {
             style={[
               BUTTON_STYLES.accent,
               styles.saveButton,
-              !projectName.trim() && styles.saveButtonDisabled,
+              (!projectName.trim() || isSaving) && styles.saveButtonDisabled,
             ]}
             onPress={handleSave}
-            disabled={!projectName.trim()}
+            disabled={!projectName.trim() || isSaving}
             activeOpacity={0.8}
           >
-            <Ionicons name="checkmark-circle-outline" size={ICON_SIZE.md} color={COLORS.white} />
-            <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.white, marginLeft: SPACING.sm }]}>
-              Crear Proyecto
-            </Text>
+            {isSaving ? (
+              <>
+                <ActivityIndicator size="small" color={COLORS.white} />
+                <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.white, marginLeft: SPACING.sm }]}>
+                  Creando...
+                </Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="checkmark-circle-outline" size={ICON_SIZE.md} color={COLORS.white} />
+                <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.white, marginLeft: SPACING.sm }]}>
+                  Crear Proyecto
+                </Text>
+              </>
+            )}
           </TouchableOpacity>
 
           {/* Bottom padding */}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../constants/colors';
 
 export default function DatePickerInput({ value, onChange, label }) {
@@ -42,7 +43,7 @@ export default function DatePickerInput({ value, onChange, label }) {
       {label && <Text style={styles.label}>{label}</Text>}
 
       <TouchableOpacity style={styles.dateButton} onPress={handlePressDate}>
-        <Text style={styles.dateIcon}>📅</Text>
+        <Ionicons name="calendar-clear-outline" style={styles.dateIcon} />
         <Text style={styles.dateText}>{formatDate(selectedDate)}</Text>
       </TouchableOpacity>
 
@@ -122,6 +123,6 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   iosButtonTextPrimary: {
-    color: COLORS.black,
+    color: COLORS.white,
   },
 });

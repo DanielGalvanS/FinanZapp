@@ -8,54 +8,48 @@ import DatePickerInput from '../components/forms/DatePickerInput';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { ReceiptGallery, ReceiptViewer } from '../components/receipts';
 import useExpenseStore from '../store/expenseStore';
-
-const CATEGORIES = [
-  { id: 1, name: 'Comida', icon: 'restaurant-outline', color: '#FF6B6B' },
-  { id: 2, name: 'Transporte', icon: 'car-outline', color: '#4ECDC4' },
-  { id: 3, name: 'Entretenimiento', icon: 'game-controller-outline', color: '#95E1D3' },
-  { id: 4, name: 'Compras', icon: 'cart-outline', color: '#F38181' },
-  { id: 5, name: 'Salud', icon: 'medkit-outline', color: '#A8E6CF' },
-  { id: 6, name: 'Educación', icon: 'book-outline', color: '#FFD3B6' },
-];
-
-const PROJECTS = [
-  { id: 1, name: 'Personal' },
-  { id: 2, name: 'Negocio' },
-  { id: 3, name: 'Renta Depa' },
-];
-
-// Datos de ejemplo del gasto que se está editando
-// En producción, estos vendrían de la navegación o del store
-const EXPENSE_TO_EDIT = {
-  id: '1',
-  amount: '120.50',
-  category: { id: 2, name: 'Transporte', icon: 'car-outline', color: '#4ECDC4' },
-  project: { id: 1, name: 'Personal' },
-  description: 'Viaje del hogar a la oficina en la mañana',
-  date: '27/10/2025',
-};
+import useDataStore from '../store/dataStore';
 
 export default function EditExpenseScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
 
+  // Store hooks
   const getExpenseById = useExpenseStore((state) => state.getExpenseById);
   const updateExpense = useExpenseStore((state) => state.updateExpense);
+  const categories = useDataStore((state) => state.categories);
+  const projects = useDataStore((state) => state.projects);
 
   const expenseFromStore = getExpenseById(id);
-  const expenseToEdit = expenseFromStore || EXPENSE_TO_EDIT;
+
+  // Si no hay expense en el store, no mostrar nada (o mostrar error)
+  if (!expenseFromStore) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Gasto no encontrado</Text>
+          <TouchableOpacity onPress={() => router.back()} style={styles.errorButton}>
+            <Text style={styles.errorButtonText}>Volver</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const expenseToEdit = expenseFromStore;
 
   // Pre-llenar con los datos existentes
   const [amount, setAmount] = useState(expenseToEdit.amount?.toString() || '');
   const [selectedCategory, setSelectedCategory] = useState(
-    CATEGORIES.find(c => c.id === expenseToEdit.categoryId) ||
-    CATEGORIES.find(c => c.name === expenseToEdit.categoryName) ||
-    expenseToEdit.category
+    categories.find(c => c.id === expenseToEdit.categoryId) ||
+    categories.find(c => c.name === expenseToEdit.categoryName) ||
+    expenseToEdit.category ||
+    categories[0]
   );
   const [selectedProject, setSelectedProject] = useState(
-    PROJECTS.find(p => p.id === expenseToEdit.projectId) ||
+    projects.find(p => p.id === expenseToEdit.projectId) ||
     expenseToEdit.project ||
-    PROJECTS[0]
+    projects[0]
   );
   const [description, setDescription] = useState(expenseToEdit.description || '');
   const [date, setDate] = useState(
@@ -189,7 +183,7 @@ export default function EditExpenseScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Categoría</Text>
             <View style={styles.categoriesGrid}>
-              {CATEGORIES.map((category) => (
+              {categories.map((category) => (
                 <TouchableOpacity
                   key={category.id}
                   style={[
@@ -229,7 +223,7 @@ export default function EditExpenseScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Proyecto</Text>
             <View style={styles.projectsRow}>
-              {PROJECTS.map((project) => (
+              {projects.map((project) => (
                 <TouchableOpacity
                   key={project.id}
                   style={[
@@ -545,9 +539,32 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: COLORS.black,
+    color: COLORS.white,
   },
   bottomPadding: {
     height: 100,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+    marginBottom: 20,
+  },
+  errorButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+  },
+  errorButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.white,
   },
 });

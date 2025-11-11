@@ -16,37 +16,35 @@ import { Header, Input } from '../components/ui';
 import { formatCurrency } from '../utils/formatters';
 import { ReceiptGallery, ReceiptViewer } from '../components/receipts';
 import useExpenseStore from '../store/expenseStore';
+import useDataStore from '../store/dataStore';
 import ocrService from '../services/ocrService';
+import dataService from '../services/dataService';
 import { showImagePickerOptions } from '../utils/imagePickerHelper';
-
-const CATEGORIES = [
-  { id: 1, name: 'Comida', icon: 'restaurant-outline', color: COLORS.categoryFood },
-  { id: 2, name: 'Transporte', icon: 'car-outline', color: COLORS.categoryTransport },
-  { id: 3, name: 'Entretenimiento', icon: 'game-controller-outline', color: COLORS.categoryEntertainment },
-  { id: 4, name: 'Compras', icon: 'cart-outline', color: COLORS.categoryShopping },
-  { id: 5, name: 'Salud', icon: 'medkit-outline', color: COLORS.categoryHealth },
-  { id: 6, name: 'Educación', icon: 'book-outline', color: COLORS.categoryEducation },
-];
-
-const PROJECTS = [
-  { id: 1, name: 'Personal' },
-  { id: 2, name: 'Negocio' },
-  { id: 3, name: 'Renta Depa' },
-];
 
 export default function AddExpenseScreen() {
   const router = useRouter();
   const addExpense = useExpenseStore((state) => state.addExpense);
 
+  // Datos desde el store global (con caché y persistencia)
+  const categories = useDataStore((state) => state.categories);
+  const projects = useDataStore((state) => state.projects);
+  const isLoadingCategories = useDataStore((state) => state.isLoadingCategories);
+  const isLoadingProjects = useDataStore((state) => state.isLoadingProjects);
+
+  // Estados del formulario
   const [amount, setAmount] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedProject, setSelectedProject] = useState(PROJECTS[0]);
+  const [selectedProject, setSelectedProject] = useState(projects[0] || null);
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toLocaleDateString('es-MX'));
   const [receipts, setReceipts] = useState([]);
   const [viewingReceipt, setViewingReceipt] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [ocrData, setOcrData] = useState(null);
+
+  // Loading state combinado
+  const isLoadingData = isLoadingCategories || isLoadingProjects;
 
   const handleAmountChange = (text) => {
     const numericValue = text.replace(/[^0-9.]/g, '');
@@ -64,44 +62,63 @@ export default function AddExpenseScreen() {
     router.back();
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!amount || !selectedCategory) {
       Alert.alert('Campos requeridos', 'Por favor ingresa el monto y selecciona una categoría');
       return;
     }
 
-    // Convertir fecha de formato dd/mm/yyyy a ISO
-    const dateParts = date.split('/');
-    const isoDate = dateParts.length === 3
-      ? new Date(dateParts[2], dateParts[1] - 1, dateParts[0]).toISOString()
-      : new Date().toISOString();
+    try {
+      setIsSaving(true);
 
-    // Crear el objeto de gasto
-    const expenseData = {
-      name: description || selectedCategory.name,
-      amount: parseFloat(amount),
-      categoryId: selectedCategory.id,
-      categoryName: selectedCategory.name,
-      categoryIcon: selectedCategory.icon,
-      categoryColor: selectedCategory.color,
-      projectId: selectedProject.id,
-      projectName: selectedProject.name,
-      description: description,
-      date: isoDate,
-      receipts: receipts,
-      comments: [],
-    };
+      // Convertir fecha de formato dd/mm/yyyy a ISO
+      const dateParts = date.split('/');
+      const isoDate = dateParts.length === 3
+        ? new Date(dateParts[2], dateParts[1] - 1, dateParts[0]).toISOString()
+        : new Date().toISOString();
 
-    // Guardar en el store
-    const savedExpense = addExpense(expenseData);
+      // Guardar en Supabase primero
+      const expenseData = {
+        name: description || selectedCategory.name,
+        amount: parseFloat(amount),
+        categoryId: selectedCategory.id,
+        projectId: selectedProject.id,
+        description: description,
+        date: isoDate,
+      };
 
-    console.log('Gasto guardado:', savedExpense);
+      const savedExpense = await dataService.saveExpense(expenseData);
 
-    Alert.alert(
-      'Gasto Guardado',
-      `Gasto de ${getFormattedAmount()} guardado exitosamente`,
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
+      console.log('[AddExpense] Gasto guardado en Supabase:', savedExpense);
+
+      // Agregar al store local con datos completos
+      const expenseForStore = {
+        ...savedExpense,
+        categoryName: selectedCategory.name,
+        categoryIcon: selectedCategory.icon,
+        categoryColor: selectedCategory.color,
+        projectName: selectedProject.name,
+        receipts: receipts,
+        comments: [],
+      };
+
+      addExpense(expenseForStore);
+
+      Alert.alert(
+        'Gasto Guardado',
+        `Gasto de ${getFormattedAmount()} guardado exitosamente`,
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (error) {
+      console.error('[AddExpense] Error al guardar gasto:', error);
+      Alert.alert(
+        'Error',
+        'No se pudo guardar el gasto. Intenta de nuevo.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleScanReceipt = async () => {
@@ -115,12 +132,14 @@ export default function AddExpenseScreen() {
 
       setIsScanning(true);
 
-      // Escanear recibo con el backend
-      // Nota: Aquí usamos un project_id hardcodeado temporalmente
-      // En producción, deberías usar el project_id del proyecto seleccionado
-      const projectId = '11111111-1111-1111-1111-111111111111'; // TODO: Usar selectedProject.id cuando tengas UUIDs reales
+      // Escanear recibo con el backend usando el proyecto seleccionado
+      if (!selectedProject) {
+        Alert.alert('Error', 'Por favor selecciona un proyecto primero');
+        setIsScanning(false);
+        return;
+      }
 
-      const response = await ocrService.scanAndCreateExpense(image.uri, projectId);
+      const response = await ocrService.scanAndCreateExpense(image.uri, selectedProject.id);
 
       console.log('[OCR] Respuesta:', response);
 
@@ -143,10 +162,10 @@ export default function AddExpenseScreen() {
           setDate(formattedDate);
         }
 
-        // Buscar categoría sugerida
+        // Buscar categoría sugerida en las categorías cargadas desde Supabase
         const suggestedCategory = response.ocr_data.suggested_category;
-        if (suggestedCategory && suggestedCategory !== 'Sin categoría') {
-          const category = CATEGORIES.find(c => c.name === suggestedCategory);
+        if (suggestedCategory && suggestedCategory !== 'Sin categoría' && suggestedCategory !== 'Otros') {
+          const category = categories.find(c => c.name === suggestedCategory);
           if (category) {
             setSelectedCategory(category);
           }
@@ -227,17 +246,27 @@ export default function AddExpenseScreen() {
             ) : null}
           />
 
-          {/* Scanning Indicator */}
-          {isScanning && (
-            <View style={styles.scanningBanner}>
-              <ActivityIndicator size="small" color={COLORS.primary} />
-              <Text style={[TYPOGRAPHY.body, { marginLeft: SPACING.md, color: COLORS.primary }]}>
-                Escaneando recibo...
+          {/* Loading State */}
+          {isLoadingData ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={[TYPOGRAPHY.body, { marginTop: SPACING.md, color: COLORS.textSecondary }]}>
+                Cargando datos...
               </Text>
             </View>
-          )}
+          ) : (
+            <>
+              {/* Scanning Indicator */}
+              {isScanning && (
+                <View style={styles.scanningBanner}>
+                  <ActivityIndicator size="small" color={COLORS.primary} />
+                  <Text style={[TYPOGRAPHY.body, { marginLeft: SPACING.md, color: COLORS.primary }]}>
+                    Escaneando recibo...
+                  </Text>
+                </View>
+              )}
 
-          {/* Amount Input */}
+              {/* Amount Input */}
           <View style={styles.amountSection}>
             <Text style={[TYPOGRAPHY.caption, styles.amountLabel]}>
               Cantidad
@@ -263,7 +292,7 @@ export default function AddExpenseScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Categoría</Text>
             <View style={styles.categoriesGrid}>
-              {CATEGORIES.map((category) => (
+              {categories.map((category) => (
                 <TouchableOpacity
                   key={category.id}
                   style={[
@@ -307,7 +336,7 @@ export default function AddExpenseScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>Proyecto</Text>
             <View style={styles.projectsRow}>
-              {PROJECTS.map((project) => (
+              {projects.map((project) => (
                 <TouchableOpacity
                   key={project.id}
                   style={[
@@ -368,19 +397,30 @@ export default function AddExpenseScreen() {
             style={[
               BUTTON_STYLES.accent,
               styles.saveButton,
-              (!amount || !selectedCategory) && styles.saveButtonDisabled,
+              (!amount || !selectedCategory || isSaving) && styles.saveButtonDisabled,
             ]}
             onPress={handleSave}
-            disabled={!amount || !selectedCategory}
+            disabled={!amount || !selectedCategory || isSaving}
             activeOpacity={0.8}
           >
-            <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.white }]}>
-              Guardar Gasto
-            </Text>
+            {isSaving ? (
+              <>
+                <ActivityIndicator size="small" color={COLORS.white} style={{ marginRight: SPACING.sm }} />
+                <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.white }]}>
+                  Guardando...
+                </Text>
+              </>
+            ) : (
+              <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.white }]}>
+                Guardar Gasto
+              </Text>
+            )}
           </TouchableOpacity>
 
-          {/* Bottom padding for tab bar */}
-          <View style={styles.bottomPadding} />
+              {/* Bottom padding for tab bar */}
+              <View style={styles.bottomPadding} />
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -410,6 +450,12 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: SPACING.xxxl * 2,
   },
   scanningBanner: {
     flexDirection: 'row',
@@ -514,6 +560,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.border,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   projectButtonSelected: {
     borderColor: COLORS.primary,

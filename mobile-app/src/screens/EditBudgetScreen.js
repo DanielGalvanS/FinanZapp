@@ -13,15 +13,7 @@ import {
 } from '../constants';
 import { Header, Input } from '../components/ui';
 import { required, positiveNumber, compose } from '../utils/validators';
-
-const CATEGORIES = [
-  { id: 1, name: 'Comida', icon: 'restaurant-outline', color: COLORS.categoryFood },
-  { id: 2, name: 'Transporte', icon: 'car-outline', color: COLORS.categoryTransport },
-  { id: 3, name: 'Entretenimiento', icon: 'game-controller-outline', color: COLORS.categoryEntertainment },
-  { id: 4, name: 'Compras', icon: 'cart-outline', color: COLORS.categoryShopping },
-  { id: 5, name: 'Salud', icon: 'medkit-outline', color: COLORS.categoryHealth },
-  { id: 6, name: 'Educación', icon: 'book-outline', color: COLORS.categoryEducation },
-];
+import useDataStore from '../store/dataStore';
 
 // Mock data - En producción vendría de una API o estado global
 const MOCK_BUDGETS = {
@@ -35,9 +27,12 @@ export default function EditBudgetScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
 
+  // Datos desde el store global
+  const categories = useDataStore((state) => state.categories);
+
   // Cargar datos del presupuesto existente
   const existingBudget = MOCK_BUDGETS[id];
-  const existingCategory = CATEGORIES.find(cat => cat.id === existingBudget?.categoryId);
+  const existingCategory = categories.find(cat => cat.id === existingBudget?.categoryId);
 
   const [amount, setAmount] = useState(existingBudget?.amount.toString() || '');
   const [selectedCategory, setSelectedCategory] = useState(existingCategory || null);
@@ -184,7 +179,7 @@ export default function EditBudgetScreen() {
             </Text>
 
             <View style={styles.categoriesGrid}>
-              {CATEGORIES.map((category) => (
+              {categories.map((category) => (
                 <TouchableOpacity
                   key={category.id}
                   style={[
