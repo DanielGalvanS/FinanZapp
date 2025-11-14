@@ -52,6 +52,8 @@ export default function HomeScreen() {
   const [isProjectSelectorExpanded, setIsProjectSelectorExpanded] = useState(false);
   const [isProjectOptionsModalVisible, setIsProjectOptionsModalVisible] = useState(false);
   const [selectedProjectForOptions, setSelectedProjectForOptions] = useState(null);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState(null);
 
   // Estado para datos cargados desde Supabase
   const [expenses, setExpenses] = useState([]);
@@ -227,9 +229,38 @@ export default function HomeScreen() {
   };
 
   const handleDeleteProjectSwipe = (project) => {
+    setProjectToDelete(project);
+    setIsDeleteModalVisible(true);
     setIsProjectSelectorExpanded(false);
-    // TODO: Mostrar confirmación antes de eliminar
-    console.log('Eliminar proyecto:', project.name);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!projectToDelete) return;
+
+    try {
+      // TODO: Implementar eliminación en dataService
+      console.log('Eliminando proyecto:', projectToDelete.name);
+
+      // Si el proyecto eliminado es el actual, cambiar a otro
+      if (currentProject?.id === projectToDelete.id && projects.length > 1) {
+        const nextProject = projects.find(p => p.id !== projectToDelete.id);
+        if (nextProject) {
+          setCurrentProject(nextProject);
+        }
+      }
+
+      // Cerrar modal
+      setIsDeleteModalVisible(false);
+      setProjectToDelete(null);
+    } catch (error) {
+      console.error('Error al eliminar proyecto:', error);
+      // TODO: Mostrar error al usuario
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalVisible(false);
+    setProjectToDelete(null);
   };
 
   // Calcular posición del dropdown basado en safe area
@@ -615,6 +646,46 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
       </BottomSheet>
+
+      {/* Delete Confirmation Bottom Sheet Modal */}
+      <BottomSheet
+        visible={isDeleteModalVisible}
+        onClose={handleCancelDelete}
+        title="Eliminar Proyecto"
+      >
+        <View style={styles.deleteModalContent}>
+          <Ionicons name="warning-outline" size={48} color="#FF3B30" />
+          <Text style={[TYPOGRAPHY.body, styles.deleteModalText]}>
+            ¿Estás seguro de que deseas eliminar el proyecto "{projectToDelete?.name}"?
+          </Text>
+          <Text style={[TYPOGRAPHY.caption, styles.deleteModalSubtext]}>
+            Esta acción no se puede deshacer. Se eliminarán todos los gastos asociados a este proyecto.
+          </Text>
+        </View>
+
+        {/* Buttons Row */}
+        <View style={styles.deleteModalButtonsRow}>
+          <TouchableOpacity
+            style={styles.deleteModalCancelButton}
+            onPress={handleCancelDelete}
+            activeOpacity={0.7}
+          >
+            <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.text }]}>
+              Cancelar
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.deleteModalDeleteButton}
+            onPress={handleConfirmDelete}
+            activeOpacity={0.7}
+          >
+            <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.white }]}>
+              Eliminar
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </BottomSheet>
     </SafeAreaView>
   );
 }
@@ -802,5 +873,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: SPACING.xxl,
+  },
+  deleteModalContent: {
+    alignItems: 'center',
+    paddingVertical: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+  },
+  deleteModalText: {
+    textAlign: 'center',
+    marginTop: SPACING.lg,
+    color: COLORS.text,
+    lineHeight: 22,
+  },
+  deleteModalSubtext: {
+    textAlign: 'center',
+    marginTop: SPACING.md,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+  },
+  deleteModalButtonsRow: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
+  deleteModalCancelButton: {
+    flex: 1,
+    paddingVertical: SPACING.lg,
+    backgroundColor: COLORS.backgroundSecondary,
+    borderRadius: RADIUS.lg,
+    alignItems: 'center',
+  },
+  deleteModalDeleteButton: {
+    flex: 1,
+    paddingVertical: SPACING.lg,
+    backgroundColor: '#FF3B30',
+    borderRadius: RADIUS.lg,
+    alignItems: 'center',
   },
 });
