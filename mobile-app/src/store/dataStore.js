@@ -111,6 +111,24 @@ const useDataStore = create(
         }));
       },
 
+      deleteProject: (projectId) => {
+        set((state) => {
+          const updatedProjects = state.projects.filter(p => p.id !== projectId);
+          let newCurrentProject = state.currentProject;
+
+          // Si el proyecto eliminado es el actual, cambiar al siguiente disponible
+          if (state.currentProject?.id === projectId) {
+            newCurrentProject = updatedProjects.length > 0 ? updatedProjects[0] : null;
+          }
+
+          return {
+            projects: updatedProjects,
+            currentProject: newCurrentProject,
+          };
+        });
+        console.log('[DataStore] Proyecto eliminado');
+      },
+
       setCurrentProject: (project) => {
         set({ currentProject: project });
         console.log('[DataStore] Proyecto actual cambiado a:', project?.name);

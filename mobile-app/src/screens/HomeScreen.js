@@ -238,23 +238,23 @@ export default function HomeScreen() {
     if (!projectToDelete) return;
 
     try {
-      // TODO: Implementar eliminación en dataService
       console.log('Eliminando proyecto:', projectToDelete.name);
 
-      // Si el proyecto eliminado es el actual, cambiar a otro
-      if (currentProject?.id === projectToDelete.id && projects.length > 1) {
-        const nextProject = projects.find(p => p.id !== projectToDelete.id);
-        if (nextProject) {
-          setCurrentProject(nextProject);
-        }
-      }
+      // Eliminar de Supabase
+      await dataService.deleteProject(projectToDelete.id);
+
+      // Actualizar el store (esto también maneja cambiar el currentProject si es necesario)
+      useDataStore.getState().deleteProject(projectToDelete.id);
 
       // Cerrar modal
       setIsDeleteModalVisible(false);
       setProjectToDelete(null);
+
+      console.log('[HomeScreen] ✅ Proyecto eliminado exitosamente');
     } catch (error) {
-      console.error('Error al eliminar proyecto:', error);
-      // TODO: Mostrar error al usuario
+      console.error('[HomeScreen] ❌ Error al eliminar proyecto:', error);
+      // TODO: Mostrar error al usuario con un Toast o Alert
+      alert('Error al eliminar el proyecto. Por favor intenta de nuevo.');
     }
   };
 

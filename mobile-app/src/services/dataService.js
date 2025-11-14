@@ -110,6 +110,26 @@ class DataService {
   }
 
   /**
+   * Elimina un proyecto
+   * IMPORTANTE: Esto también eliminará todos los expenses asociados (CASCADE)
+   */
+  async deleteProject(projectId) {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', projectId);
+
+      if (error) throw error;
+
+      return { success: true };
+    } catch (error) {
+      console.error('[DataService] Error al eliminar proyecto:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Guarda un expense en Supabase (no en local)
    */
   async saveExpense(expenseData) {
