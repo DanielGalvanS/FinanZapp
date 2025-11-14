@@ -18,7 +18,7 @@ import { SectionHeader, BottomSheet, BottomSheetOption, Avatar } from '../compon
 import { ProjectCard } from '../components/projects';
 import { TransactionCard } from '../components/transactions';
 import { CategoryCard } from '../components/categories';
-import { BalanceCard, QuickActions, ProjectSelector } from '../components/home';
+import { BalanceCard, QuickActions } from '../components/home';
 import useDataStore from '../store/dataStore';
 import dataService from '../services/dataService';
 
@@ -271,6 +271,16 @@ export default function HomeScreen() {
     );
   }
 
+  const handleMenuPress = () => {
+    // TODO: Implementar menú
+    console.log('Menu pressed');
+  };
+
+  const handleSharePress = () => {
+    // TODO: Implementar compartir proyecto
+    console.log('Share pressed');
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
@@ -278,30 +288,64 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Project Selector */}
-        <ProjectSelector
-          currentProject={currentProject}
-          projects={projects}
-          isExpanded={isProjectSelectorExpanded}
-          onToggleExpanded={handleProjectPress}
-          onSelectProject={handleSelectProject}
-          onCreateProject={handleCreateProject}
-          onProjectOptions={handleOpenProjectOptions}
-        />
-
-        {/* Header */}
+        {/* Header con 3 elementos horizontales */}
         <View style={styles.header}>
-          <View>
-            <Text style={[TYPOGRAPHY.caption, { color: COLORS.textSecondary }]}>
-              Hola, Bienvenido
-            </Text>
+          {/* Botón de menú (3 puntos) - Izquierda */}
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={handleMenuPress}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="ellipsis-horizontal" size={ICON_SIZE.md} color={COLORS.text} />
+          </TouchableOpacity>
+
+          {/* Selector de Proyecto - Centro */}
+          <TouchableOpacity
+            style={styles.projectSelectorButton}
+            onPress={handleProjectPress}
+            activeOpacity={0.7}
+          >
+            <View style={styles.projectInfo}>
+              <Ionicons
+                name="folder-outline"
+                size={ICON_SIZE.sm}
+                color={COLORS.text}
+                style={{ marginRight: SPACING.xs }}
+              />
+              <Text style={[TYPOGRAPHY.bodyBold, styles.projectName]} numberOfLines={1}>
+                {currentProject.name}
+              </Text>
+              <Ionicons
+                name={isProjectSelectorExpanded ? "chevron-up" : "chevron-down"}
+                size={ICON_SIZE.xs}
+                color={COLORS.textSecondary}
+              />
+            </View>
+          </TouchableOpacity>
+
+          {/* Botón de compartir - Derecha */}
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={handleSharePress}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="share-outline" size={ICON_SIZE.md} color={COLORS.text} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Saludo y nombre del usuario */}
+        <View style={styles.welcomeSection}>
+          <Text style={[TYPOGRAPHY.caption, { color: COLORS.textSecondary }]}>
+            Hola, Bienvenido
+          </Text>
+          <View style={styles.userRow}>
             <Text style={[TYPOGRAPHY.h3, { marginTop: SPACING.xs }]}>
               Leon Fernandez
             </Text>
+            <TouchableOpacity style={styles.notificationButton} activeOpacity={0.7}>
+              <Ionicons name="notifications-outline" size={ICON_SIZE.md} color={COLORS.text} />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.notificationButton} activeOpacity={0.7}>
-            <Ionicons name="notifications-outline" size={ICON_SIZE.md} color={COLORS.text} />
-          </TouchableOpacity>
         </View>
 
         {/* Period Selector */}
@@ -416,6 +460,53 @@ export default function HomeScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
+      {/* Project Dropdown Overlay */}
+      {isProjectSelectorExpanded && (
+        <>
+          {/* Backdrop invisible para cerrar */}
+          <TouchableOpacity
+            style={styles.backdrop}
+            activeOpacity={1}
+            onPress={handleProjectPress}
+          />
+          {/* Dropdown */}
+          <View style={styles.projectDropdown}>
+            {/* Otros Proyectos */}
+            {projects.filter(p => p.id !== currentProject.id).map((project, index, array) => (
+              <TouchableOpacity
+                key={project.id}
+                style={styles.projectDropdownItem}
+                onPress={() => handleSelectProject(project)}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={project.icon || 'folder-outline'}
+                  size={ICON_SIZE.sm}
+                  color={COLORS.textSecondary}
+                  style={{ marginRight: SPACING.sm }}
+                />
+                <Text style={[TYPOGRAPHY.body, { color: COLORS.text }]}>{project.name}</Text>
+              </TouchableOpacity>
+            ))}
+
+            {/* Crear Proyecto */}
+            <TouchableOpacity
+              style={styles.createProjectDropdownItem}
+              onPress={handleCreateProject}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="add-circle-outline"
+                size={ICON_SIZE.md}
+                color={COLORS.primary}
+                style={{ marginRight: SPACING.sm }}
+              />
+              <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.primary }]}>Crear Proyecto</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+
       {/* Project Options Bottom Sheet Modal */}
       <BottomSheet
         visible={isProjectOptionsModalVisible}
@@ -488,9 +579,100 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingBottom: SPACING.lg,
+  },
+  headerButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: RADIUS.md,
+  },
+  projectSelectorButton: {
+    width: 200,
+    marginHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.backgroundSecondary,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  projectInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+  },
+  projectName: {
+    marginLeft: SPACING.xs,
+    marginRight: SPACING.xs,
+  },
+  projectDropdown: {
+    position: 'absolute',
+    top: 128,
+    left: '50%',
+    marginLeft: -100, // La mitad del width (240/2)
+    width: 200,
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.lg,
+    paddingVertical: SPACING.xs,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    zIndex: 1001,
+    ...SHADOWS.sm,
+    overflow: 'hidden',
+  },
+  currentProjectDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    marginHorizontal: SPACING.xs,
+    marginVertical: SPACING.xs,
+    borderRadius: RADIUS.md,
+  },
+  projectDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+  },
+  checkmark: {
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  createProjectDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    marginTop: SPACING.xs,
+  },
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    zIndex: 999,
+  },
+  welcomeSection: {
+    paddingHorizontal: SPACING.xl,
+    paddingBottom: SPACING.lg,
+  },
+  userRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   notificationButton: {
     width: 44,
