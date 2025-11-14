@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Slot } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import CustomTabBar from '../src/components/navigation/CustomTabBar';
 import useDataStore from '../src/store/dataStore';
 
@@ -18,9 +19,11 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <Slot />
-      <CustomTabBar />
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <Slot />
+        <CustomTabBar />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

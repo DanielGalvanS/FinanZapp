@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Swipeable } from 'react-native-gesture-handler';
 import {
   COLORS,
   SPACING,
@@ -37,6 +38,7 @@ const QUICK_ACTIONS = [
 
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   // Datos desde el store global
   const projects = useDataStore((state) => state.projects);
@@ -219,6 +221,59 @@ export default function HomeScreen() {
     }
   };
 
+  const handleEditProject = (project) => {
+    setIsProjectSelectorExpanded(false);
+    router.push(`/edit-project/${project.id}`);
+  };
+
+  const handleDeleteProjectSwipe = (project) => {
+    setIsProjectSelectorExpanded(false);
+    // TODO: Mostrar confirmación antes de eliminar
+    console.log('Eliminar proyecto:', project.name);
+  };
+
+  // Calcular posición del dropdown basado en safe area
+  const dropdownTop = insets.top + SPACING.md + 44 + SPACING.xs;
+
+  const renderRightActions = (progress, dragX, project) => {
+    const translateX = dragX.interpolate({
+      inputRange: [-140, 0],
+      outputRange: [0, 140],
+      extrapolate: 'clamp',
+    });
+
+    const opacity = dragX.interpolate({
+      inputRange: [-140, -70, 0],
+      outputRange: [1, 0.5, 0],
+      extrapolate: 'clamp',
+    });
+
+    return (
+      <Animated.View
+        style={[
+          styles.swipeActionsContainer,
+          {
+            transform: [{ translateX }],
+            opacity,
+          }
+        ]}
+      >
+        <TouchableOpacity
+          style={[styles.swipeAction, { backgroundColor: '#007AFF' }]}
+          onPress={() => handleEditProject(project)}
+        >
+          <Ionicons name="create-outline" size={ICON_SIZE.md} color={COLORS.white} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.swipeAction, { backgroundColor: '#FF3B30' }]}
+          onPress={() => handleDeleteProjectSwipe(project)}
+        >
+          <Ionicons name="trash-outline" size={ICON_SIZE.md} color={COLORS.white} />
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
   // Mostrar loading mientras se cargan proyectos
   if (isLoadingProjects) {
     return (
@@ -251,7 +306,7 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
             <Ionicons name="add" size={ICON_SIZE.md} color={COLORS.white} style={{ marginRight: SPACING.sm }} />
-            <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.white }]}>
+            <Text style={[TYPOGRAPHY.tiny, { color: COLORS.white }]}>
               Crear Proyecto
             </Text>
           </TouchableOpacity>
@@ -470,23 +525,29 @@ export default function HomeScreen() {
             onPress={handleProjectPress}
           />
           {/* Dropdown */}
-          <View style={styles.projectDropdown}>
+          <View style={[styles.projectDropdown, { top: dropdownTop }]}>
             {/* Otros Proyectos */}
             {projects.filter(p => p.id !== currentProject.id).map((project, index, array) => (
-              <TouchableOpacity
+              <Swipeable
                 key={project.id}
-                style={styles.projectDropdownItem}
-                onPress={() => handleSelectProject(project)}
-                activeOpacity={0.7}
+                renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, project)}
+                overshootRight={false}
+                friction={2}
               >
-                <Ionicons
-                  name={project.icon || 'folder-outline'}
-                  size={ICON_SIZE.sm}
-                  color={COLORS.textSecondary}
-                  style={{ marginRight: SPACING.sm }}
-                />
-                <Text style={[TYPOGRAPHY.body, { color: COLORS.text }]}>{project.name}</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.projectDropdownItem}
+                  onPress={() => handleSelectProject(project)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons
+                    name={project.icon || 'folder-outline'}
+                    size={ICON_SIZE.sm}
+                    color={COLORS.textSecondary}
+                    style={{ marginRight: SPACING.sm }}
+                  />
+                  <Text style={[TYPOGRAPHY.body, { color: COLORS.text }]}>{project.name}</Text>
+                </TouchableOpacity>
+              </Swipeable>
             ))}
 
             {/* Crear Proyecto */}
@@ -595,7 +656,7 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     paddingHorizontal: SPACING.md,
-    backgroundColor: COLORS.backgroundSecondary,
+    backgroundColor: COLORS.background,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -612,11 +673,11 @@ const styles = StyleSheet.create({
   },
   projectDropdown: {
     position: 'absolute',
-    top: 128,
+    // top se calcula dinámicamente con useSafeAreaInsets
     left: '50%',
-    marginLeft: -100, // La mitad del width (240/2)
+    marginLeft: -100, // La mitad del width (200/2)
     width: 200,
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.background,
     borderRadius: RADIUS.lg,
     paddingVertical: SPACING.xs,
     borderWidth: 1,
@@ -639,10 +700,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
+    backgroundColor: COLORS.background,
   },
   checkmark: {
     width: 20,
     height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  swipeActionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  swipeAction: {
+    width: 70,
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
