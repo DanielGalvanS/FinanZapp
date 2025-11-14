@@ -237,13 +237,13 @@ export default function HomeScreen() {
 
   const renderRightActions = (progress, dragX, project) => {
     const translateX = dragX.interpolate({
-      inputRange: [-140, 0],
-      outputRange: [0, 140],
+      inputRange: [-80, 0],
+      outputRange: [0, 80],
       extrapolate: 'clamp',
     });
 
     const opacity = dragX.interpolate({
-      inputRange: [-140, -70, 0],
+      inputRange: [-80, -40, 0],
       outputRange: [1, 0.5, 0],
       extrapolate: 'clamp',
     });
@@ -259,13 +259,7 @@ export default function HomeScreen() {
         ]}
       >
         <TouchableOpacity
-          style={[styles.swipeAction, { backgroundColor: '#007AFF' }]}
-          onPress={() => handleEditProject(project)}
-        >
-          <Ionicons name="create-outline" size={ICON_SIZE.md} color={COLORS.white} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.swipeAction, { backgroundColor: '#FF3B30' }]}
+          style={[styles.swipeAction, { backgroundColor: '#FF3B30', width: 80 }]}
           onPress={() => handleDeleteProjectSwipe(project)}
         >
           <Ionicons name="trash-outline" size={ICON_SIZE.md} color={COLORS.white} />
