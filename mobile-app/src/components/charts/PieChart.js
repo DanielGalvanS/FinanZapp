@@ -30,19 +30,36 @@ export default function PieChart({
         <Text style={[TYPOGRAPHY.bodyBold, styles.title]}>{title}</Text>
       )}
       {chartData.length > 0 ? (
-        <RNPieChart
-          data={chartData}
-          width={SCREEN_WIDTH - SPACING.xl * 2}
-          height={height}
-          chartConfig={chartConfig}
-          accessor="population"
-          backgroundColor="transparent"
-          paddingLeft={showLegend ? '0' : '50'}
-          center={showLegend ? undefined : [10, 0]}
-          absolute={false}
-          hasLegend={showLegend}
-          style={styles.chart}
-        />
+        <View>
+          <View style={styles.chartContainer}>
+            <RNPieChart
+              data={chartData}
+              width={SCREEN_WIDTH - SPACING.xl * 2}
+              height={height}
+              chartConfig={chartConfig}
+              accessor="population"
+              backgroundColor="transparent"
+              paddingLeft="15"
+              center={[SCREEN_WIDTH / 4, 0]}
+              absolute={false}
+              hasLegend={false}
+              style={styles.chart}
+            />
+          </View>
+
+          {showLegend && (
+            <View style={styles.legendContainer}>
+              {chartData.map((item, index) => (
+                <View key={index} style={styles.legendItem}>
+                  <View style={[styles.legendColor, { backgroundColor: item.color }]} />
+                  <Text style={styles.legendText} numberOfLines={1}>
+                    {item.name} ({Math.round((item.population / data.reduce((acc, curr) => acc + curr.value, 0)) * 100)}%)
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
       ) : (
         <View style={styles.emptyState}>
           <Text style={[TYPOGRAPHY.body, styles.emptyText]}>
@@ -61,8 +78,34 @@ const styles = StyleSheet.create({
   title: {
     marginBottom: SPACING.md,
   },
+  chartContainer: {
+    alignItems: 'center',
+  },
   chart: {
     borderRadius: RADIUS.lg,
+  },
+  legendContainer: {
+    marginTop: SPACING.md,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: SPACING.sm,
+    marginBottom: SPACING.xs,
+  },
+  legendColor: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 6,
+  },
+  legendText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textSecondary,
   },
   emptyState: {
     height: 220,

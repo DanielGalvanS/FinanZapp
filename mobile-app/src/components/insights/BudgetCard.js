@@ -25,9 +25,11 @@ export default function BudgetCard({
   return (
     <View style={[CARD_STYLES.minimal, styles.container]}>
       <View style={styles.header}>
-        <Text style={[TYPOGRAPHY.bodyBold, styles.name]}>
-          {name}
-        </Text>
+        <View style={{ flex: 1, marginRight: SPACING.md }}>
+          <Text style={[TYPOGRAPHY.bodyBold, styles.name]} numberOfLines={1}>
+            {name}
+          </Text>
+        </View>
         <Text style={[TYPOGRAPHY.body, styles.amount]}>
           {formatCurrency(spent, currency)} / {formatCurrency(total, currency)}
         </Text>

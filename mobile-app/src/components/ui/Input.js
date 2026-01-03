@@ -1,28 +1,30 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { COLORS, SPACING, RADIUS, TYPOGRAPHY, INPUT_STYLES } from '../../constants';
+import { COLORS, SPACING, RADIUS, TYPOGRAPHY } from '../../constants';
 
-export default function Input({
-  label = null,
+const Input = ({
+  label,
   value,
   onChangeText,
-  placeholder = '',
-  error = null,
-  maxLength = null,
-  showCharCount = false,
-  multiline = false,
-  numberOfLines = 1,
+  placeholder,
+  error,
+  helperText,
+  maxLength,
+  showCharCount,
+  multiline,
+  numberOfLines,
   style,
   inputStyle,
-  ...props
-}) {
+  editable = true,
+  ...rest
+}) => {
   return (
     <View style={[styles.container, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
 
       <TextInput
         style={[
-          INPUT_STYLES.base,
+          styles.input,
           multiline && styles.multiline,
           error && styles.inputError,
           inputStyle,
@@ -35,20 +37,22 @@ export default function Input({
         multiline={multiline}
         numberOfLines={multiline ? numberOfLines : 1}
         textAlignVertical={multiline ? 'top' : 'center'}
-        {...props}
+        editable={editable}
+        {...rest}
       />
 
       <View style={styles.footer}>
         {error && <Text style={styles.errorText}>{error}</Text>}
+        {helperText && !error && <Text style={styles.helperText}>{helperText}</Text>}
         {showCharCount && maxLength && (
           <Text style={styles.charCount}>
-            {value.length}/{maxLength}
+            {value?.length || 0}/{maxLength}
           </Text>
         )}
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -57,6 +61,16 @@ const styles = StyleSheet.create({
   label: {
     ...TYPOGRAPHY.bodyBold,
     marginBottom: SPACING.md,
+  },
+  input: {
+    backgroundColor: COLORS.white,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    borderRadius: RADIUS.md,
+    padding: SPACING.lg,
+    fontSize: 15,
+    color: COLORS.text,
+    minHeight: 50,
   },
   multiline: {
     minHeight: 100,
@@ -74,9 +88,15 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.caption,
     color: COLORS.error,
   },
+  helperText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.textSecondary,
+  },
   charCount: {
     ...TYPOGRAPHY.tiny,
     color: COLORS.textSecondary,
     textAlign: 'right',
   },
 });
+
+export default Input;

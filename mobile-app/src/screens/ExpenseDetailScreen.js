@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, formatDate, formatTime } from '../utils/formatters';
 import { ReceiptGallery, ReceiptViewer } from '../components/receipts';
 import { CommentInput } from '../components/comments';
 import useExpenseStore from '../store/expenseStore';
@@ -58,6 +58,7 @@ export default function ExpenseDetailScreen() {
   const addComment = useExpenseStore((state) => state.addComment);
   const deleteComment = useExpenseStore((state) => state.deleteComment);
   const categories = useDataStore((state) => state.categories);
+  const projects = useDataStore((state) => state.projects);
 
   const [expense, setExpense] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -283,155 +284,162 @@ export default function ExpenseDetailScreen() {
         style={styles.keyboardView}
       >
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color={COLORS.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Detalle del Gasto</Text>
-          <TouchableOpacity style={styles.moreButton}>
-            <Ionicons name="ellipsis-horizontal" size={24} color={COLORS.text} />
-          </TouchableOpacity>
-        </View>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={24} color={COLORS.text} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Detalle del Gasto</Text>
+            <TouchableOpacity style={styles.moreButton}>
+              <Ionicons name="ellipsis-horizontal" size={24} color={COLORS.text} />
+            </TouchableOpacity>
+          </View>
 
-        {/* Amount Card */}
-        <View style={styles.amountCard}>
-          <Text style={styles.amountLabel}>Monto</Text>
-          <Text style={styles.amount}>{formatCurrency(expense.amount)}</Text>
-          <Text style={styles.currency}>MXN</Text>
-        </View>
+          {/* Amount Card */}
+          <View style={styles.amountCard}>
+            <Text style={styles.amountLabel}>Monto</Text>
+            <Text style={styles.amount}>{formatCurrency(expense.amount)}</Text>
+            <Text style={styles.currency}>MXN</Text>
+          </View>
 
-        {/* Expense Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Información</Text>
+          {/* Expense Info */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Información</Text>
 
-          <View style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Nombre</Text>
-              <Text style={styles.infoValue}>{expense.name}</Text>
-            </View>
+            <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Nombre</Text>
+                <Text style={styles.infoValue}>{expense.name}</Text>
+              </View>
 
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Categoría</Text>
-              {expense.category ? (
-                <View style={styles.categoryBadge}>
-                  <View style={[styles.categoryIcon, { backgroundColor: expense.category.color + '20' }]}>
-                    <Ionicons name={expense.category.icon} size={18} color={expense.category.color} />
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Categoría</Text>
+                {expense.category ? (
+                  <View style={styles.categoryBadge}>
+                    <View style={[styles.categoryIcon, { backgroundColor: expense.category.color + '20' }]}>
+                      <Ionicons name={expense.category.icon} size={18} color={expense.category.color} />
+                    </View>
+                    <Text style={styles.categoryName}>{expense.category.name}</Text>
                   </View>
-                  <Text style={styles.categoryName}>{expense.category.name}</Text>
+                ) : (
+                  <Text style={styles.infoValue}>Sin categoría</Text>
+                )}
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Proyecto</Text>
+                <Text style={styles.infoValue}>
+                  {expense.projectName ||
+                    expense.project?.name ||
+                    projects.find(p => p.id === expense.projectId)?.name ||
+                    'Sin proyecto'}
+                </Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Fecha</Text>
+                <Text style={styles.infoValue}>
+                  {formatDate(expense.date, 'long')} • {formatTime(expense.date)}
+                </Text>
+              </View>
+
+              {expense.description && (
+                <View style={[styles.infoRow, styles.infoRowColumn]}>
+                  <Text style={styles.infoLabel}>Descripción</Text>
+                  <Text style={styles.descriptionText}>{expense.description}</Text>
                 </View>
-              ) : (
-                <Text style={styles.infoValue}>Sin categoría</Text>
               )}
             </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Proyecto</Text>
-              <Text style={styles.infoValue}>{expense.project?.name || 'Sin proyecto'}</Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Fecha</Text>
-              <Text style={styles.infoValue}>{expense.date} • {expense.time}</Text>
-            </View>
-
-            {expense.description && (
-              <View style={[styles.infoRow, styles.infoRowColumn]}>
-                <Text style={styles.infoLabel}>Descripción</Text>
-                <Text style={styles.descriptionText}>{expense.description}</Text>
-              </View>
-            )}
           </View>
-        </View>
 
-        {/* Receipts */}
-        <View style={styles.section}>
-          <ReceiptGallery
-            receipts={expense.receipts}
-            onAddReceipt={handleAddReceipt}
-            onRemoveReceipt={handleRemoveReceipt}
-            onViewReceipt={handleViewReceipt}
-            label="Recibos"
-            editable={true}
-          />
-        </View>
-
-        {/* Created By (Solo si es proyecto compartido) */}
-        {expense.isSharedProject && (
+          {/* Receipts */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Creado Por</Text>
-            <View style={styles.creatorCard}>
-              <Text style={styles.creatorAvatar}>{expense.createdBy.avatar}</Text>
-              <View style={styles.creatorInfo}>
-                <Text style={styles.creatorName}>{expense.createdBy.name}</Text>
-                <Text style={styles.createdDate}>{expense.createdAt}</Text>
+            <ReceiptGallery
+              receipts={expense.receipts}
+              onAddReceipt={handleAddReceipt}
+              onRemoveReceipt={handleRemoveReceipt}
+              onViewReceipt={handleViewReceipt}
+              label="Recibos"
+              editable={true}
+            />
+          </View>
+
+          {/* Created By (Solo si es proyecto compartido) */}
+          {expense.isSharedProject && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Creado Por</Text>
+              <View style={styles.creatorCard}>
+                <Text style={styles.creatorAvatar}>{expense.createdBy.avatar}</Text>
+                <View style={styles.creatorInfo}>
+                  <Text style={styles.creatorName}>{expense.createdBy.name}</Text>
+                  <Text style={styles.createdDate}>{expense.createdAt}</Text>
+                </View>
               </View>
             </View>
+          )}
+
+          {/* Comments */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Comentarios ({expense.comments.length})</Text>
+
+            <View style={styles.commentsContainer}>
+              {expense.comments.map((comment) => {
+                const CommentItemComponent = require('../components/comments').CommentItem;
+                return (
+                  <CommentItemComponent
+                    key={comment.id}
+                    comment={comment}
+                    currentUserId="1"
+                    onDelete={handleDeleteComment}
+                    onMention={handleMentionUser}
+                  />
+                );
+              })}
+
+              {expense.comments.length === 0 && (
+                <Text style={styles.noCommentsText}>
+                  No hay comentarios aún. Sé el primero en comentar.
+                </Text>
+              )}
+            </View>
           </View>
+
+          {/* Actions */}
+          <View style={styles.actionsSection}>
+            <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
+              <Ionicons name="create-outline" size={20} color={COLORS.text} />
+              <Text style={styles.actionLabel}>Editar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.actionButton} onPress={handleDuplicate}>
+              <Ionicons name="copy-outline" size={20} color={COLORS.text} />
+              <Text style={styles.actionLabel}>Duplicar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+              <Ionicons name="share-outline" size={20} color={COLORS.text} />
+              <Text style={styles.actionLabel}>Compartir</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.actionButton, styles.actionButtonDanger]} onPress={handleDelete}>
+              <Ionicons name="trash-outline" size={20} color={COLORS.error} />
+              <Text style={[styles.actionLabel, styles.actionLabelDanger]}>Eliminar</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Bottom padding */}
+          <View style={styles.bottomPadding} />
+        </ScrollView>
+
+        {/* Comment Input - Fixed at bottom */}
+        {expense.isSharedProject && (
+          <CommentInput
+            onSend={handleSendComment}
+            mentionUser={mentionUser}
+            onClearMention={() => setMentionUser(null)}
+          />
         )}
-
-        {/* Comments */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Comentarios ({expense.comments.length})</Text>
-
-          <View style={styles.commentsContainer}>
-            {expense.comments.map((comment) => {
-              const CommentItemComponent = require('../components/comments').CommentItem;
-              return (
-                <CommentItemComponent
-                  key={comment.id}
-                  comment={comment}
-                  currentUserId="1"
-                  onDelete={handleDeleteComment}
-                  onMention={handleMentionUser}
-                />
-              );
-            })}
-
-            {expense.comments.length === 0 && (
-              <Text style={styles.noCommentsText}>
-                No hay comentarios aún. Sé el primero en comentar.
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {/* Actions */}
-        <View style={styles.actionsSection}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
-            <Ionicons name="create-outline" size={20} color={COLORS.text} />
-            <Text style={styles.actionLabel}>Editar</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={handleDuplicate}>
-            <Ionicons name="copy-outline" size={20} color={COLORS.text} />
-            <Text style={styles.actionLabel}>Duplicar</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-            <Ionicons name="share-outline" size={20} color={COLORS.text} />
-            <Text style={styles.actionLabel}>Compartir</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.actionButton, styles.actionButtonDanger]} onPress={handleDelete}>
-            <Ionicons name="trash-outline" size={20} color={COLORS.error} />
-            <Text style={[styles.actionLabel, styles.actionLabelDanger]}>Eliminar</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Bottom padding */}
-        <View style={styles.bottomPadding} />
-      </ScrollView>
-
-      {/* Comment Input - Fixed at bottom */}
-      {expense.isSharedProject && (
-        <CommentInput
-          onSend={handleSendComment}
-          mentionUser={mentionUser}
-          onClearMention={() => setMentionUser(null)}
-        />
-      )}
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
 
       {/* Receipt Viewer Modal */}
       <ReceiptViewer

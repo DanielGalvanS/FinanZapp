@@ -48,11 +48,20 @@ export default function LineChart({
       )}
       <RNLineChart
         data={chartData}
-        width={SCREEN_WIDTH - SPACING.xl * 2}
+        width={SCREEN_WIDTH - SPACING.xl * 2 - 20} // Reduce width to prevent clipping
         height={height}
-        chartConfig={chartConfig}
+        chartConfig={{
+          ...chartConfig,
+          propsForLabels: {
+            fontSize: 10,
+          },
+        }}
         bezier
-        style={styles.chart}
+        style={{
+          ...styles.chart,
+          paddingRight: 40, // Ensure space for the last label/point
+          paddingLeft: 0,
+        }}
         yAxisSuffix={yAxisSuffix}
         withInnerLines={true}
         withOuterLines={false}
@@ -60,6 +69,7 @@ export default function LineChart({
         withHorizontalLines={true}
         withVerticalLabels={true}
         withHorizontalLabels={true}
+        fromZero
       />
     </View>
   );

@@ -212,6 +212,269 @@ class DataService {
       { id: 2, name: 'Negocio', description: 'Gastos del negocio', isShared: false, collaborators: [] },
     ];
   }
+  /**
+   * Obtiene metas del usuario
+   */
+  async getGoals() {
+    try {
+      // TODO: Obtener user_id real del contexto de auth
+      const tempUserId = '00000000-0000-0000-0000-000000000000';
+
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', tempUserId)
+        .order('deadline', { ascending: true });
+
+      if (error) throw error;
+
+      return data.map(goal => ({
+        id: goal.id,
+        name: goal.name,
+        target: goal.target_amount,
+        current: goal.current_amount,
+        deadline: goal.deadline,
+        description: goal.description,
+        icon: goal.icon || 'flag',
+        color: goal.color || '#4ECDC4',
+      }));
+    } catch (error) {
+      console.error('[DataService] Error al obtener metas:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Crea una nueva meta
+   */
+  async createGoal(goalData) {
+    try {
+      // TODO: Obtener user_id real del contexto de auth
+      const tempUserId = '00000000-0000-0000-0000-000000000000';
+
+      const { data, error } = await supabase
+        .from('goals')
+        .insert([
+          {
+            user_id: tempUserId,
+            name: goalData.name,
+            target_amount: goalData.targetAmount,
+            current_amount: goalData.currentAmount || 0,
+            deadline: goalData.deadline,
+            description: goalData.description || '',
+            icon: goalData.icon?.icon || 'flag',
+            color: goalData.icon?.color || '#4ECDC4',
+          },
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        id: data.id,
+        name: data.name,
+        target: data.target_amount,
+        current: data.current_amount,
+        deadline: data.deadline,
+        description: data.description,
+        icon: data.icon,
+        color: data.color,
+      };
+    } catch (error) {
+      console.error('[DataService] Error al crear meta:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualiza una meta existente
+   */
+  async updateGoal(id, updates) {
+    try {
+      const dbUpdates = {};
+      if (updates.name) dbUpdates.name = updates.name;
+      if (updates.targetAmount) dbUpdates.target_amount = updates.targetAmount;
+      if (updates.currentAmount !== undefined) dbUpdates.current_amount = updates.currentAmount;
+      if (updates.deadline) dbUpdates.deadline = updates.deadline;
+      if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.icon) {
+        dbUpdates.icon = updates.icon.icon || updates.icon;
+        dbUpdates.color = updates.icon.color || updates.color;
+      }
+
+      const { data, error } = await supabase
+        .from('goals')
+        .update(dbUpdates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        id: data.id,
+        name: data.name,
+        target: data.target_amount,
+        current: data.current_amount,
+        deadline: data.deadline,
+        description: data.description,
+        icon: data.icon,
+        color: data.color,
+      };
+    } catch (error) {
+      console.error('[DataService] Error al actualizar meta:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Elimina una meta
+   */
+  /**
+   * Obtiene presupuestos del usuario
+   */
+  async getBudgets() {
+    try {
+      // TODO: Obtener user_id real del contexto de auth
+      const tempUserId = '00000000-0000-0000-0000-000000000000';
+
+      const { data, error } = await supabase
+        .from('budgets')
+        .select('*, categories(*)')
+        .eq('user_id', tempUserId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return data.map(budget => ({
+        id: budget.id,
+        total: budget.amount,
+        spent: budget.spent || 0, // TODO: Calcular gasto real basado en expenses
+        period: budget.period,
+        projectId: budget.project_id,
+        category: budget.categories ? {
+          id: budget.categories.id,
+          name: budget.categories.name,
+          icon: budget.categories.icon,
+          color: budget.categories.color
+        } : null,
+        startDate: budget.start_date,
+        endDate: budget.end_date
+      }));
+    } catch (error) {
+      console.error('[DataService] Error al obtener presupuestos:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Crea un nuevo presupuesto
+   */
+  async createBudget(budgetData) {
+    try {
+      // TODO: Obtener user_id real del contexto de auth
+      const tempUserId = '00000000-0000-0000-0000-000000000000';
+
+      const { data, error } = await supabase
+        .from('budgets')
+        .insert([
+          {
+            user_id: tempUserId,
+            amount: budgetData.amount,
+            period: budgetData.period,
+            category_id: budgetData.categoryId,
+            project_id: budgetData.projectId,
+            start_date: budgetData.startDate,
+            end_date: budgetData.endDate
+          },
+        ])
+        .select('*, categories(*)')
+        .single();
+
+      if (error) throw error;
+
+      return {
+        id: data.id,
+        total: data.amount,
+        spent: 0,
+        period: data.period,
+        projectId: data.project_id,
+        category: data.categories ? {
+          id: data.categories.id,
+          name: data.categories.name,
+          icon: data.categories.icon,
+          color: data.categories.color
+        } : null,
+        startDate: data.start_date,
+        endDate: data.end_date
+      };
+    } catch (error) {
+      console.error('[DataService] Error al crear presupuesto:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualiza un presupuesto
+   */
+  async updateBudget(id, updates) {
+    try {
+      const dbUpdates = {};
+      if (updates.amount) dbUpdates.amount = updates.amount;
+      if (updates.period) dbUpdates.period = updates.period;
+      if (updates.categoryId) dbUpdates.category_id = updates.categoryId;
+      if (updates.projectId) dbUpdates.project_id = updates.projectId;
+      if (updates.startDate) dbUpdates.start_date = updates.startDate;
+      if (updates.endDate) dbUpdates.end_date = updates.endDate;
+
+      const { data, error } = await supabase
+        .from('budgets')
+        .update(dbUpdates)
+        .eq('id', id)
+        .select('*, categories(*)')
+        .single();
+
+      if (error) throw error;
+
+      return {
+        id: data.id,
+        total: data.amount,
+        spent: data.spent || 0,
+        period: data.period,
+        projectId: data.project_id,
+        category: data.categories ? {
+          id: data.categories.id,
+          name: data.categories.name,
+          icon: data.categories.icon,
+          color: data.categories.color
+        } : null,
+        startDate: data.start_date,
+        endDate: data.end_date
+      };
+    } catch (error) {
+      console.error('[DataService] Error al actualizar presupuesto:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Elimina un presupuesto
+   */
+  async deleteBudget(id) {
+    try {
+      const { error } = await supabase
+        .from('budgets')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      console.error('[DataService] Error al eliminar presupuesto:', error);
+      throw error;
+    }
+  }
 }
 
 export default new DataService();

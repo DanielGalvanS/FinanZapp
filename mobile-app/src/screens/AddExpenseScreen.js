@@ -97,7 +97,9 @@ export default function AddExpenseScreen() {
         categoryName: selectedCategory.name,
         categoryIcon: selectedCategory.icon,
         categoryColor: selectedCategory.color,
+        categoryId: selectedCategory.id,
         projectName: selectedProject.name,
+        projectId: selectedProject.id,
         receipts: receipts,
         comments: [],
       };
@@ -267,155 +269,155 @@ export default function AddExpenseScreen() {
               )}
 
               {/* Amount Input */}
-          <View style={styles.amountSection}>
-            <Text style={[TYPOGRAPHY.caption, styles.amountLabel]}>
-              Cantidad
-            </Text>
-            <View style={styles.amountInputContainer}>
-              <Text style={styles.currencySymbol}>$</Text>
-              <TextInput
-                style={styles.amountInput}
-                value={amount}
-                onChangeText={handleAmountChange}
-                placeholder="0.00"
-                placeholderTextColor={COLORS.textTertiary}
-                keyboardType="decimal-pad"
-                maxLength={10}
-              />
-            </View>
-            <Text style={[TYPOGRAPHY.caption, styles.amountFormatted]}>
-              {getFormattedAmount()} MXN
-            </Text>
-          </View>
-
-          {/* Category Selection */}
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Categoría</Text>
-            <View style={styles.categoriesGrid}>
-              {categories.map((category) => (
-                <TouchableOpacity
-                  key={category.id}
-                  style={[
-                    styles.categoryItem,
-                    selectedCategory?.id === category.id && [
-                      styles.categoryItemSelected,
-                      { borderColor: category.color, backgroundColor: category.color + '10' },
-                    ],
-                  ]}
-                  onPress={() => setSelectedCategory(category)}
-                  activeOpacity={0.7}
-                >
-                  <View
-                    style={[
-                      styles.categoryIconContainer,
-                      { backgroundColor: category.color + '20' },
-                      selectedCategory?.id === category.id && { backgroundColor: category.color },
-                    ]}
-                  >
-                    <Ionicons
-                      name={category.icon}
-                      size={ICON_SIZE.md}
-                      color={selectedCategory?.id === category.id ? COLORS.white : category.color}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      TYPOGRAPHY.caption,
-                      styles.categoryName,
-                      selectedCategory?.id === category.id && styles.categoryNameSelected,
-                    ]}
-                  >
-                    {category.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Project Selection */}
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>Proyecto</Text>
-            <View style={styles.projectsRow}>
-              {projects.map((project) => (
-                <TouchableOpacity
-                  key={project.id}
-                  style={[
-                    styles.projectButton,
-                    selectedProject?.id === project.id && styles.projectButtonSelected,
-                  ]}
-                  onPress={() => setSelectedProject(project)}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={[
-                      TYPOGRAPHY.body,
-                      styles.projectText,
-                      selectedProject?.id === project.id && styles.projectTextSelected,
-                    ]}
-                  >
-                    {project.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Description */}
-          <View style={styles.section}>
-            <Input
-              label="Descripción (opcional)"
-              value={description}
-              onChangeText={setDescription}
-              placeholder="Ej: Comida en restaurante..."
-              multiline={true}
-              numberOfLines={3}
-            />
-          </View>
-
-          {/* Receipts */}
-          <View style={styles.section}>
-            <ReceiptGallery
-              receipts={receipts}
-              onAddReceipt={handleAddReceipt}
-              onRemoveReceipt={handleRemoveReceipt}
-              onViewReceipt={handleViewReceipt}
-              label="Recibos (opcional)"
-            />
-          </View>
-
-          {/* Date */}
-          <View style={styles.section}>
-            <DatePickerInput
-              label="Fecha"
-              value={date}
-              onChange={setDate}
-            />
-          </View>
-
-          {/* Save Button */}
-          <TouchableOpacity
-            style={[
-              BUTTON_STYLES.accent,
-              styles.saveButton,
-              (!amount || !selectedCategory || isSaving) && styles.saveButtonDisabled,
-            ]}
-            onPress={handleSave}
-            disabled={!amount || !selectedCategory || isSaving}
-            activeOpacity={0.8}
-          >
-            {isSaving ? (
-              <>
-                <ActivityIndicator size="small" color={COLORS.white} style={{ marginRight: SPACING.sm }} />
-                <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.white }]}>
-                  Guardando...
+              <View style={styles.amountSection}>
+                <Text style={[TYPOGRAPHY.caption, styles.amountLabel]}>
+                  Cantidad
                 </Text>
-              </>
-            ) : (
-              <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.white }]}>
-                Guardar Gasto
-              </Text>
-            )}
-          </TouchableOpacity>
+                <View style={styles.amountInputContainer}>
+                  <Text style={styles.currencySymbol}>$</Text>
+                  <TextInput
+                    style={styles.amountInput}
+                    value={amount}
+                    onChangeText={handleAmountChange}
+                    placeholder="0.00"
+                    placeholderTextColor={COLORS.textTertiary}
+                    keyboardType="decimal-pad"
+                    maxLength={10}
+                  />
+                </View>
+                <Text style={[TYPOGRAPHY.caption, styles.amountFormatted]}>
+                  {getFormattedAmount()} MXN
+                </Text>
+              </View>
+
+              {/* Category Selection */}
+              <View style={styles.section}>
+                <Text style={styles.sectionLabel}>Categoría</Text>
+                <View style={styles.categoriesGrid}>
+                  {categories.map((category) => (
+                    <TouchableOpacity
+                      key={category.id}
+                      style={[
+                        styles.categoryItem,
+                        selectedCategory?.id === category.id && [
+                          styles.categoryItemSelected,
+                          { borderColor: category.color, backgroundColor: category.color + '10' },
+                        ],
+                      ]}
+                      onPress={() => setSelectedCategory(category)}
+                      activeOpacity={0.7}
+                    >
+                      <View
+                        style={[
+                          styles.categoryIconContainer,
+                          { backgroundColor: category.color + '20' },
+                          selectedCategory?.id === category.id && { backgroundColor: category.color },
+                        ]}
+                      >
+                        <Ionicons
+                          name={category.icon}
+                          size={ICON_SIZE.md}
+                          color={selectedCategory?.id === category.id ? COLORS.white : category.color}
+                        />
+                      </View>
+                      <Text
+                        style={[
+                          TYPOGRAPHY.caption,
+                          styles.categoryName,
+                          selectedCategory?.id === category.id && styles.categoryNameSelected,
+                        ]}
+                      >
+                        {category.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Project Selection */}
+              <View style={styles.section}>
+                <Text style={styles.sectionLabel}>Proyecto</Text>
+                <View style={styles.projectsRow}>
+                  {projects.map((project) => (
+                    <TouchableOpacity
+                      key={project.id}
+                      style={[
+                        styles.projectButton,
+                        selectedProject?.id === project.id && styles.projectButtonSelected,
+                      ]}
+                      onPress={() => setSelectedProject(project)}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          TYPOGRAPHY.body,
+                          styles.projectText,
+                          selectedProject?.id === project.id && styles.projectTextSelected,
+                        ]}
+                      >
+                        {project.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Description */}
+              <View style={styles.section}>
+                <Input
+                  label="Descripción (opcional)"
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="Ej: Comida en restaurante..."
+                  multiline={true}
+                  numberOfLines={3}
+                />
+              </View>
+
+              {/* Receipts */}
+              <View style={styles.section}>
+                <ReceiptGallery
+                  receipts={receipts}
+                  onAddReceipt={handleAddReceipt}
+                  onRemoveReceipt={handleRemoveReceipt}
+                  onViewReceipt={handleViewReceipt}
+                  label="Recibos (opcional)"
+                />
+              </View>
+
+              {/* Date */}
+              <View style={styles.section}>
+                <DatePickerInput
+                  label="Fecha"
+                  value={date}
+                  onChange={setDate}
+                />
+              </View>
+
+              {/* Save Button */}
+              <TouchableOpacity
+                style={[
+                  BUTTON_STYLES.accent,
+                  styles.saveButton,
+                  (!amount || !selectedCategory || isSaving) && styles.saveButtonDisabled,
+                ]}
+                onPress={handleSave}
+                disabled={!amount || !selectedCategory || isSaving}
+                activeOpacity={0.8}
+              >
+                {isSaving ? (
+                  <>
+                    <ActivityIndicator size="small" color={COLORS.white} style={{ marginRight: SPACING.sm }} />
+                    <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.white }]}>
+                      Guardando...
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={[TYPOGRAPHY.bodyBold, { color: COLORS.white }]}>
+                    Guardar Gasto
+                  </Text>
+                )}
+              </TouchableOpacity>
 
               {/* Bottom padding for tab bar */}
               <View style={styles.bottomPadding} />

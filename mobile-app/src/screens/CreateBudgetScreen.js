@@ -21,6 +21,9 @@ export default function CreateBudgetScreen() {
   // Datos desde el store global
   const categories = useDataStore((state) => state.categories);
 
+  const addBudget = useDataStore((state) => state.addBudget);
+  const [isSaving, setIsSaving] = useState(false);
+
   const [amount, setAmount] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [errors, setErrors] = useState({});
@@ -47,21 +50,35 @@ export default function CreateBudgetScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) {
       return;
     }
 
-    console.log('Creating budget:', {
-      amount: parseFloat(amount),
-      category: selectedCategory,
-    });
+    try {
+      setIsSaving(true);
+      const budgetData = {
+        amount: parseFloat(amount),
+        period: 'monthly', // Default to monthly for now
+        categoryId: selectedCategory.id,
+        projectId: '11111111-1111-1111-1111-111111111111', // Default project ID
+        startDate: new Date().toISOString(),
+        endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString(),
+      };
 
-    Alert.alert(
-      'Presupuesto Creado',
-      `Presupuesto de $${parseFloat(amount).toLocaleString('es-MX')} creado para ${selectedCategory.name}`,
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
+      await addBudget(budgetData);
+
+      Alert.alert(
+        'Presupuesto Creado',
+        `Presupuesto de $${parseFloat(amount).toLocaleString('es-MX')} creado para ${selectedCategory.name}`,
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (error) {
+      console.error('Error creating budget:', error);
+      Alert.alert('Error', 'No se pudo crear el presupuesto. Intenta de nuevo.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -81,6 +98,7 @@ export default function CreateBudgetScreen() {
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Amount Input */}
           <View style={LAYOUT.section}>
@@ -109,26 +127,36 @@ export default function CreateBudgetScreen() {
                   key={category.id}
                   style={[
                     styles.categoryCard,
-                    selectedCategory?.id === category.id && styles.categoryCardSelected,
+                    selectedCategory?.id === category.id && [
+                      styles.categoryCardSelected,
+                      { borderColor: category.color, backgroundColor: category.color + '10' },
+                    ],
                   ]}
                   onPress={() => setSelectedCategory(category)}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.categoryIconContainer, { backgroundColor: category.color + '20' }]}>
+                  <View
+                    style={[
+                      styles.categoryIconContainer,
+                      { backgroundColor: category.color + '20' },
+                      selectedCategory?.id === category.id && { backgroundColor: category.color },
+                    ]}
+                  >
                     <Ionicons
                       name={category.icon}
                       size={ICON_SIZE.lg}
-                      color={category.color}
+                      color={selectedCategory?.id === category.id ? COLORS.white : category.color}
                     />
                   </View>
-                  <Text style={[TYPOGRAPHY.bodyBold, styles.categoryName]}>
+                  <Text
+                    style={[
+                      TYPOGRAPHY.bodyBold,
+                      styles.categoryName,
+                      selectedCategory?.id === category.id && styles.categoryNameSelected,
+                    ]}
+                  >
                     {category.name}
                   </Text>
-                  {selectedCategory?.id === category.id && (
-                    <View style={styles.checkmark}>
-                      <Ionicons name="checkmark" size={ICON_SIZE.sm} color={COLORS.white} />
-                    </View>
-                  )}
                 </TouchableOpacity>
               ))}
             </View>
@@ -182,15 +210,18 @@ const styles = StyleSheet.create({
   categoryCard: {
     width: '47%',
     backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.md,
     padding: SPACING.lg,
     borderWidth: 2,
     borderColor: COLORS.border,
-    position: 'relative',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+    shadowColor: 'transparent',
+    elevation: 0,
   },
   categoryCardSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: COLORS.primary + '05',
+    borderWidth: 2,
+    // Color set dynamically
   },
   categoryIconContainer: {
     width: 56,
@@ -202,17 +233,11 @@ const styles = StyleSheet.create({
   },
   categoryName: {
     textAlign: 'center',
+    color: COLORS.text,
+    fontWeight: '600',
   },
-  checkmark: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+  categoryNameSelected: {
+    fontWeight: '700',
   },
   infoCard: {
     flexDirection: 'row',

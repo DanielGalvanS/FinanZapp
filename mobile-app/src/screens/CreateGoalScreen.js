@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,8 +27,13 @@ const GOAL_ICONS = [
   { id: 10, name: 'Otro', icon: 'flag', color: COLORS.textSecondary },
 ];
 
+import useDataStore from '../store/dataStore';
+import { ActivityIndicator } from 'react-native';
+
 export default function CreateGoalScreen() {
   const router = useRouter();
+  const addGoal = useDataStore((state) => state.addGoal);
+
   const [name, setName] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [currentAmount, setCurrentAmount] = useState('');
@@ -36,6 +41,7 @@ export default function CreateGoalScreen() {
   const [description, setDescription] = useState('');
   const [selectedIcon, setSelectedIcon] = useState(null);
   const [errors, setErrors] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleBack = () => {
     router.back();
@@ -94,39 +100,65 @@ export default function CreateGoalScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) {
       return;
     }
 
-    console.log('Creating goal:', {
-      name,
-      targetAmount: parseFloat(targetAmount),
-      currentAmount: currentAmount ? parseFloat(currentAmount) : 0,
-      deadline,
-      description,
-      icon: selectedIcon,
-    });
+    try {
+      setIsSaving(true);
+      const goalData = {
+        name,
+        targetAmount: parseFloat(targetAmount),
+        currentAmount: currentAmount ? parseFloat(currentAmount) : 0,
+        deadline,
+        description,
+        icon: selectedIcon,
+      };
 
-    Alert.alert(
-      'Meta Creada',
-      `Meta "${name}" creada con objetivo de $${parseFloat(targetAmount).toLocaleString('es-MX')}`,
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
+      await addGoal(goalData);
+
+      Alert.alert(
+        'Meta Creada',
+        `Meta "${name}" creada exitosamente`,
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (error) {
+      console.error('Error creating goal:', error);
+      Alert.alert('Error', 'No se pudo crear la meta. Intenta de nuevo.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getEstimatedMonthlyContribution = () => {
     if (!targetAmount || !deadline || !currentAmount) return null;
 
-    const target = parseFloat(targetAmount);
-    const current = currentAmount ? parseFloat(currentAmount) : 0;
-    const remaining = target - current;
+    // Validate that deadline is a valid date (YYYY-MM-DD format)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(deadline)) return null;
 
     const deadlineDate = new Date(deadline);
+    // Check if date is valid
+    if (isNaN(deadlineDate.getTime())) return null;
+
+    const target = parseFloat(targetAmount);
+    const current = currentAmount ? parseFloat(currentAmount) : 0;
+
+    // Validate numbers
+    if (isNaN(target) || isNaN(current)) return null;
+
+    const remaining = target - current;
+    if (remaining <= 0) return null;
+
     const today = new Date();
     const monthsRemaining = Math.max(1, Math.round((deadlineDate - today) / (1000 * 60 * 60 * 24 * 30)));
 
     const monthlyContribution = remaining / monthsRemaining;
+
+    // Ensure result is a valid finite number
+    if (!isFinite(monthlyContribution) || monthlyContribution <= 0) return null;
+
     return monthlyContribution;
   };
 
@@ -149,9 +181,10 @@ export default function CreateGoalScreen() {
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Name Input */}
-          <View style={LAYOUT.section}>
+          <View style={styles.section}>
             <Input
               label="Nombre de la Meta"
               value={name}
@@ -162,7 +195,7 @@ export default function CreateGoalScreen() {
           </View>
 
           {/* Icon Selection */}
-          <View style={LAYOUT.section}>
+          <View style={styles.section}>
             <Text style={[TYPOGRAPHY.h3, styles.sectionTitle]}>
               Ícono
             </Text>
@@ -170,39 +203,36 @@ export default function CreateGoalScreen() {
               Selecciona un ícono que represente tu meta
             </Text>
 
-            <View style={styles.iconsGrid}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.iconsScrollContent}
+            >
               {GOAL_ICONS.map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   style={[
                     styles.iconCard,
-                    selectedIcon?.id === item.id && styles.iconCardSelected,
+                    selectedIcon?.id === item.id && [
+                      styles.iconCardSelected,
+                      { borderColor: item.color, backgroundColor: item.color + '20' },
+                    ],
                   ]}
                   onPress={() => setSelectedIcon(item)}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.iconContainer, { backgroundColor: item.color + '20' }]}>
-                    <Ionicons
-                      name={item.icon}
-                      size={ICON_SIZE.lg}
-                      color={item.color}
-                    />
-                  </View>
-                  <Text style={[TYPOGRAPHY.caption, styles.iconName]}>
-                    {item.name}
-                  </Text>
-                  {selectedIcon?.id === item.id && (
-                    <View style={styles.checkmark}>
-                      <Ionicons name="checkmark" size={ICON_SIZE.xs} color={COLORS.white} />
-                    </View>
-                  )}
+                  <Ionicons
+                    name={item.icon}
+                    size={28}
+                    color={item.color}
+                  />
                 </TouchableOpacity>
               ))}
-            </View>
+            </ScrollView>
           </View>
 
           {/* Amount Inputs */}
-          <View style={LAYOUT.section}>
+          <View style={styles.section}>
             <Input
               label="Monto Objetivo"
               value={targetAmount}
@@ -213,7 +243,7 @@ export default function CreateGoalScreen() {
             />
           </View>
 
-          <View style={LAYOUT.section}>
+          <View style={styles.section}>
             <Input
               label="Monto Actual (opcional)"
               value={currentAmount}
@@ -226,7 +256,7 @@ export default function CreateGoalScreen() {
           </View>
 
           {/* Deadline Input */}
-          <View style={LAYOUT.section}>
+          <View style={styles.section}>
             <Input
               label="Fecha Límite"
               value={deadline}
@@ -238,7 +268,7 @@ export default function CreateGoalScreen() {
           </View>
 
           {/* Description Input */}
-          <View style={LAYOUT.section}>
+          <View style={styles.section}>
             <Input
               label="Descripción (opcional)"
               value={description}
@@ -251,7 +281,7 @@ export default function CreateGoalScreen() {
 
           {/* Estimated Monthly Contribution */}
           {monthlyContribution && (
-            <View style={LAYOUT.section}>
+            <View style={styles.section}>
               <View style={styles.estimateCard}>
                 <Ionicons name="calculator" size={ICON_SIZE.md} color={COLORS.primary} />
                 <View style={styles.estimateContent}>
@@ -270,7 +300,7 @@ export default function CreateGoalScreen() {
           )}
 
           {/* Info Card */}
-          <View style={LAYOUT.section}>
+          <View style={styles.section}>
             <View style={styles.infoCard}>
               <Ionicons name="information-circle" size={ICON_SIZE.md} color={COLORS.primary} />
               <Text style={[TYPOGRAPHY.body, styles.infoText]}>
@@ -301,58 +331,42 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: SPACING.xxxl,
   },
+  section: {
+    paddingHorizontal: SPACING.xl,
+    marginBottom: SPACING.lg, // Reduced from xxl (24) to lg (16)
+  },
   sectionTitle: {
     fontWeight: '700',
     marginBottom: SPACING.xs,
   },
   sectionSubtitle: {
     color: COLORS.textSecondary,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.sm, // Reduced from lg
   },
-  iconsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.md,
+  iconsScrollContent: {
+    paddingHorizontal: SPACING.xs,
+    paddingBottom: SPACING.sm,
   },
   iconCard: {
-    width: '18%',
-    aspectRatio: 1,
-    backgroundColor: COLORS.white,
-    borderRadius: RADIUS.md,
-    padding: SPACING.sm,
-    borderWidth: 2,
-    borderColor: COLORS.border,
-    alignItems: 'center',
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: COLORS.gray100,
     justifyContent: 'center',
-    position: 'relative',
+    alignItems: 'center',
+    marginRight: SPACING.sm,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   iconCardSelected: {
     borderColor: COLORS.primary,
-    backgroundColor: COLORS.primary + '05',
+    backgroundColor: COLORS.primary + '20',
   },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: RADIUS.sm,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACING.xs,
-  },
-  iconName: {
-    textAlign: 'center',
-    fontSize: 10,
-    color: COLORS.textSecondary,
-  },
-  checkmark: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+  inputGray: {
+    backgroundColor: COLORS.gray50,
+    borderWidth: 2,
+    borderColor: COLORS.gray200,
+    color: COLORS.text,
   },
   estimateCard: {
     flexDirection: 'row',

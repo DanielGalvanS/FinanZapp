@@ -7,6 +7,7 @@ export default function Header({
   title,
   onBack = null,
   onClose = null,
+  rightText = null,
   rightAction = null,
   rightIcon = null,
   onRightPress = null,
@@ -37,14 +38,19 @@ export default function Header({
       </Text>
 
       {/* Right Button */}
-      {rightAction || rightIcon ? (
+      {rightText || rightAction || rightIcon ? (
         <TouchableOpacity
           onPress={onRightPress}
-          style={[styles.iconButton, rightAction && styles.rightActionButton]}
+          style={[
+            rightIcon ? styles.iconButton : styles.textButton,
+            rightAction && styles.rightActionButton
+          ]}
           activeOpacity={0.7}
         >
           {rightIcon ? (
             <Ionicons name={rightIcon} size={ICON_SIZE.md} color={COLORS.white} />
+          ) : rightText ? (
+            <Text style={TYPOGRAPHY.bodyBold}>{rightText}</Text>
           ) : (
             rightAction
           )}
@@ -80,5 +86,8 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     width: 40,
+  },
+  textButton: {
+    padding: SPACING.sm,
   },
 });

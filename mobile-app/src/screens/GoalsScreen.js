@@ -15,16 +15,17 @@ import { Header } from '../components/ui';
 import { GoalCard } from '../components/insights';
 
 // Datos de ejemplo
-const GOALS_DATA = [
-  { id: 1, name: 'Vacaciones Europa', current: 45000, target: 80000, icon: 'airplane', color: COLORS.primary, deadline: '2025-12-31' },
-  { id: 2, name: 'Fondo de Emergencia', current: 28000, target: 50000, icon: 'shield-checkmark', color: COLORS.success, deadline: '2025-06-30' },
-  { id: 3, name: 'Laptop Nueva', current: 12000, target: 30000, icon: 'laptop', color: COLORS.warning, deadline: '2025-08-15' },
-  { id: 4, name: 'Auto', current: 150000, target: 300000, icon: 'car-sport', color: COLORS.categoryTransport, deadline: '2026-12-31' },
-];
+import useDataStore from '../store/dataStore';
+import { useEffect } from 'react';
 
 export default function GoalsScreen() {
   const router = useRouter();
-  const [goals, setGoals] = useState(GOALS_DATA);
+  const goals = useDataStore((state) => state.goals);
+  const loadGoals = useDataStore((state) => state.loadGoals);
+
+  useEffect(() => {
+    loadGoals();
+  }, []);
 
   const handleBack = () => {
     router.back();

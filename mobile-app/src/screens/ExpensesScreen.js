@@ -14,7 +14,7 @@ import {
 import { SearchBar, FilterPills } from '../components/ui';
 import { TransactionCard } from '../components/transactions';
 import useDataStore from '../store/dataStore';
-import dataService from '../services/dataService';
+import useExpenseStore from '../store/expenseStore';
 import { formatCurrency, formatDate } from '../utils/formatters';
 
 const FILTER_OPTIONS = ['Todo', 'Comida', 'Transporte', 'Entretenimiento', 'Compras', 'Salud', 'Educación'];
@@ -32,44 +32,31 @@ export default function ExpensesScreen() {
   const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState('Todo');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedProjectId, setSelectedProjectId] = useState('all'); // 'all' o un project id
 
   // Obtener proyecto actual y categorías del store
   const currentProject = useDataStore((state) => state.currentProject);
   const categories = useDataStore((state) => state.categories);
+  const projects = useDataStore((state) => state.projects);
 
-  // Estado para expenses cargados desde Supabase
-  const [expenses, setExpenses] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Obtener expenses del store de gastos
+  const expenses = useExpenseStore((state) => state.expenses);
+  const loadExpenses = useExpenseStore((state) => state.loadExpenses);
+  const isLoading = useExpenseStore((state) => state.isLoading);
 
-  // Cargar expenses cuando cambia el proyecto
+  // Cargar todos los expenses (sin filtro de proyecto)
   useEffect(() => {
-    if (currentProject) {
-      loadExpenses();
-    }
-  }, [currentProject]);
-
-  const loadExpenses = async () => {
-    if (!currentProject) return;
-
-    try {
-      setIsLoading(true);
-
-      // Obtener expenses del proyecto actual desde Supabase
-      const filters = { projectId: currentProject.id };
-      const expensesData = await dataService.getExpenses(filters);
-
-      setExpenses(expensesData);
-      console.log('[ExpensesScreen] Gastos cargados:', expensesData.length);
-    } catch (error) {
-      console.error('[ExpensesScreen] Error al cargar gastos:', error);
-      setExpenses([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    loadExpenses(); // Cargar todos los expenses
+  }, []);
 
   const handleTransactionPress = (transactionId) => {
     router.push(`/expense-detail/${transactionId}`);
+  };
+
+  // Obtener el nombre del proyecto por ID
+  const getProjectName = (projectId) => {
+    const project = projects.find(p => p.id === projectId);
+    return project?.name || 'Sin proyecto';
   };
 
   // Transformar expenses para el formato esperado por TransactionCard
@@ -84,15 +71,17 @@ export default function ExpensesScreen() {
       time: new Date(expense.date).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
       icon: category?.icon || 'cash-outline',
       color: CATEGORY_COLORS[category?.name] || COLORS.textSecondary,
-      project: currentProject?.name || 'Personal',
+      project: getProjectName(expense.project_id),
+      projectId: expense.project_id,
     };
   });
 
-  // Filtrar transacciones
+  // Filtrar transacciones por proyecto, categoría y búsqueda
   const filteredTransactions = transformedExpenses.filter((transaction) => {
+    const matchesProject = selectedProjectId === 'all' || transaction.projectId === selectedProjectId;
     const matchesFilter = selectedFilter === 'Todo' || transaction.category === selectedFilter;
     const matchesSearch = transaction.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+    return matchesProject && matchesFilter && matchesSearch;
   });
 
   const totalExpenses = filteredTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
@@ -108,6 +97,58 @@ export default function ExpensesScreen() {
             <Ionicons name="bar-chart-outline" size={ICON_SIZE.sm} color={COLORS.white} />
           </TouchableOpacity>
         </View>
+
+        {/* Project Selector */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.projectSelector}
+          contentContainerStyle={styles.projectSelectorContent}
+        >
+          <TouchableOpacity
+            style={[
+              styles.projectPill,
+              selectedProjectId === 'all' && styles.projectPillActive
+            ]}
+            onPress={() => setSelectedProjectId('all')}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="apps"
+              size={14}
+              color={selectedProjectId === 'all' ? COLORS.white : COLORS.textSecondary}
+            />
+            <Text style={[
+              styles.projectPillText,
+              selectedProjectId === 'all' && styles.projectPillTextActive
+            ]}>
+              Todos
+            </Text>
+          </TouchableOpacity>
+
+          {projects.map((project) => (
+            <TouchableOpacity
+              key={project.id}
+              style={[
+                styles.projectPill,
+                selectedProjectId === project.id && styles.projectPillActive
+              ]}
+              onPress={() => setSelectedProjectId(project.id)}
+              activeOpacity={0.7}
+            >
+              <View style={[
+                styles.projectDot,
+                { backgroundColor: selectedProjectId === project.id ? COLORS.white : (project.color || COLORS.primary) }
+              ]} />
+              <Text style={[
+                styles.projectPillText,
+                selectedProjectId === project.id && styles.projectPillTextActive
+              ]}>
+                {project.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
         {/* Summary Card */}
         <View style={[CARD_STYLES.dark, styles.summaryCard]}>
@@ -296,5 +337,40 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 100,
+  },
+  projectSelector: {
+    marginBottom: SPACING.lg,
+  },
+  projectSelectorContent: {
+    paddingHorizontal: SPACING.xl,
+    gap: SPACING.sm,
+  },
+  projectPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.round,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  projectPillActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  projectPillText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
+  },
+  projectPillTextActive: {
+    color: COLORS.white,
+  },
+  projectDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });

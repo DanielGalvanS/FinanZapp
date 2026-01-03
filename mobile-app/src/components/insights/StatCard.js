@@ -29,10 +29,14 @@ export default function StatCard({
       ]}>
         {label}
       </Text>
-      <Text style={[
-        isPrimary ? TYPOGRAPHY.h2 : TYPOGRAPHY.h3,
-        isPrimary ? styles.amountPrimary : styles.amountSecondary
-      ]}>
+      <Text
+        style={[
+          isPrimary ? TYPOGRAPHY.h2 : TYPOGRAPHY.h3,
+          isPrimary ? styles.amountPrimary : styles.amountSecondary
+        ]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      >
         {showCurrency ? formatCurrency(amount, currency) : `$${amount.toLocaleString('es-MX')}`}
       </Text>
 

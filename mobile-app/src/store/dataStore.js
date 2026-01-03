@@ -17,6 +17,8 @@ const useDataStore = create(
       // ========================================
       categories: [],
       projects: [],
+      goals: [], // New goals state
+      budgets: [], // New budgets state
       currentProject: null, // Proyecto seleccionado actualmente
       isLoadingCategories: false,
       isLoadingProjects: false,
@@ -135,6 +137,116 @@ const useDataStore = create(
       },
 
       // ========================================
+      // ACTIONS - GOALS
+      // ========================================
+      loadGoals: async (force = false) => {
+        const state = get();
+        if (!force && state.goals.length > 0) return;
+
+        try {
+          const goals = await dataService.getGoals();
+          set({ goals });
+          console.log(`[DataStore] ✅ Metas cargadas: ${goals.length}`);
+        } catch (error) {
+          console.error('[DataStore] ❌ Error al cargar metas:', error);
+        }
+      },
+
+      addGoal: async (goalData) => {
+        try {
+          // Optimistic update (optional, but good for UX)
+          // For now, we wait for server response to get the ID
+          const newGoal = await dataService.createGoal(goalData);
+          set((state) => ({
+            goals: [...state.goals, newGoal],
+          }));
+          return newGoal;
+        } catch (error) {
+          console.error('[DataStore] Error al agregar meta:', error);
+          throw error;
+        }
+      },
+
+      updateGoal: async (id, updates) => {
+        try {
+          const updatedGoal = await dataService.updateGoal(id, updates);
+          set((state) => ({
+            goals: state.goals.map((g) => (g.id === id ? updatedGoal : g)),
+          }));
+          return updatedGoal;
+        } catch (error) {
+          console.error('[DataStore] Error al actualizar meta:', error);
+          throw error;
+        }
+      },
+
+      deleteGoal: async (id) => {
+        try {
+          await dataService.deleteGoal(id);
+          set((state) => ({
+            goals: state.goals.filter((g) => g.id !== id),
+          }));
+        } catch (error) {
+          console.error('[DataStore] Error al eliminar meta:', error);
+          throw error;
+        }
+      },
+
+      // ========================================
+      // ACTIONS - BUDGETS
+      // ========================================
+      loadBudgets: async (force = false) => {
+        const state = get();
+        if (!force && state.budgets.length > 0) return;
+
+        try {
+          const budgets = await dataService.getBudgets();
+          set({ budgets });
+          console.log(`[DataStore] ✅ Presupuestos cargados: ${budgets.length}`);
+        } catch (error) {
+          console.error('[DataStore] ❌ Error al cargar presupuestos:', error);
+        }
+      },
+
+      addBudget: async (budgetData) => {
+        try {
+          const newBudget = await dataService.createBudget(budgetData);
+          set((state) => ({
+            budgets: [...state.budgets, newBudget],
+          }));
+          return newBudget;
+        } catch (error) {
+          console.error('[DataStore] Error al agregar presupuesto:', error);
+          throw error;
+        }
+      },
+
+      updateBudget: async (id, updates) => {
+        try {
+          const updatedBudget = await dataService.updateBudget(id, updates);
+          set((state) => ({
+            budgets: state.budgets.map((b) => (b.id === id ? updatedBudget : b)),
+          }));
+          return updatedBudget;
+        } catch (error) {
+          console.error('[DataStore] Error al actualizar presupuesto:', error);
+          throw error;
+        }
+      },
+
+      deleteBudget: async (id) => {
+        try {
+          await dataService.deleteBudget(id);
+          set((state) => ({
+            budgets: state.budgets.filter((b) => b.id !== id),
+          }));
+        } catch (error) {
+          console.error('[DataStore] Error al eliminar presupuesto:', error);
+          throw error;
+        }
+      },
+
+      // ========================================
       // ACTIONS - INICIALIZACIÓN
       // ========================================
       initialize: async () => {
@@ -150,6 +262,8 @@ const useDataStore = create(
         await Promise.all([
           get().loadCategories(),
           get().loadProjects(),
+          get().loadGoals(),
+          get().loadBudgets(),
         ]);
 
         // Si no hay proyecto seleccionado, seleccionar el primero
@@ -178,11 +292,21 @@ const useDataStore = create(
         return state.categories.length > 0 && state.projects.length > 0;
       },
 
+      getGoalById: (id) => {
+        return get().goals.find(g => g.id === id);
+      },
+
+      getBudgetById: (id) => {
+        return get().budgets.find(b => b.id === id);
+      },
+
       // Reset (útil para logout)
       reset: () => {
         set({
           categories: [],
           projects: [],
+          goals: [],
+          budgets: [],
           currentProject: null,
           lastCategoriesUpdate: null,
           lastProjectsUpdate: null,
@@ -197,6 +321,8 @@ const useDataStore = create(
       partialize: (state) => ({
         categories: state.categories,
         projects: state.projects,
+        goals: state.goals,
+        budgets: state.budgets,
         currentProject: state.currentProject,
         lastCategoriesUpdate: state.lastCategoriesUpdate,
         lastProjectsUpdate: state.lastProjectsUpdate,

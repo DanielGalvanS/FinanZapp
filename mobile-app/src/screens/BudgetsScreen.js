@@ -14,16 +14,17 @@ import { Header } from '../components/ui';
 import { BudgetCard } from '../components/insights';
 
 // Datos de ejemplo
-const BUDGETS_DATA = [
-  { id: 1, name: 'Comida', spent: 8450, total: 10000, category: { id: 1, icon: 'restaurant-outline', color: COLORS.categoryFood } },
-  { id: 2, name: 'Transporte', spent: 4200, total: 5000, category: { id: 2, icon: 'car-outline', color: COLORS.categoryTransport } },
-  { id: 3, name: 'Entretenimiento', spent: 2300, total: 3000, category: { id: 3, icon: 'game-controller-outline', color: COLORS.categoryEntertainment } },
-  { id: 4, name: 'Compras', spent: 1500, total: 8000, category: { id: 4, icon: 'cart-outline', color: COLORS.categoryShopping } },
-];
+import useDataStore from '../store/dataStore';
+import { useEffect } from 'react';
 
 export default function BudgetsScreen() {
   const router = useRouter();
-  const [budgets, setBudgets] = useState(BUDGETS_DATA);
+  const budgets = useDataStore((state) => state.budgets);
+  const loadBudgets = useDataStore((state) => state.loadBudgets);
+
+  useEffect(() => {
+    loadBudgets();
+  }, []);
 
   const handleBack = () => {
     router.back();
@@ -117,7 +118,7 @@ export default function BudgetsScreen() {
                 activeOpacity={0.7}
               >
                 <BudgetCard
-                  name={budget.name}
+                  name={budget.category?.name || 'Sin categoría'}
                   spent={budget.spent}
                   total={budget.total}
                 />

@@ -208,6 +208,7 @@ export const INPUT_STYLES = {
     padding: SPACING.lg,
     fontSize: FONT_SIZE.md,
     color: COLORS.text,
+    minHeight: 50, // Ensure touch target and visibility
   },
 
   focused: {
