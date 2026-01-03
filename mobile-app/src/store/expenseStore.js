@@ -155,13 +155,13 @@ const useExpenseStore = create(
         const breakdown = {};
 
         expenses.forEach((expense) => {
-          const categoryId = expense.categoryId || 'unknown';
+          const categoryId = expense.category_id || 'unknown';
           if (!breakdown[categoryId]) {
             breakdown[categoryId] = {
               id: categoryId,
-              name: expense.categoryName || 'Sin categoría',
-              color: expense.categoryColor || '#9E9E9E',
-              icon: expense.categoryIcon || 'pricetag-outline',
+              name: 'Sin categoría', // Will be populated by the component using categories from dataStore
+              color: '#9E9E9E',
+              icon: 'pricetag-outline',
               total: 0,
               count: 0,
             };

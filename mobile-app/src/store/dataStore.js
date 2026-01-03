@@ -20,6 +20,7 @@ const useDataStore = create(
       goals: [], // New goals state
       budgets: [], // New budgets state
       currentProject: null, // Proyecto seleccionado actualmente
+      showAllProjects: false, // Vista global de todos los proyectos
       isLoadingCategories: false,
       isLoadingProjects: false,
       lastCategoriesUpdate: null,
@@ -132,8 +133,13 @@ const useDataStore = create(
       },
 
       setCurrentProject: (project) => {
-        set({ currentProject: project });
+        set({ currentProject: project, showAllProjects: false });
         console.log('[DataStore] Proyecto actual cambiado a:', project?.name);
+      },
+
+      setShowAllProjects: (value) => {
+        set({ showAllProjects: value });
+        console.log('[DataStore] Vista de todos los proyectos:', value);
       },
 
       // ========================================
@@ -324,6 +330,7 @@ const useDataStore = create(
         goals: state.goals,
         budgets: state.budgets,
         currentProject: state.currentProject,
+        showAllProjects: state.showAllProjects,
         lastCategoriesUpdate: state.lastCategoriesUpdate,
         lastProjectsUpdate: state.lastProjectsUpdate,
       }),

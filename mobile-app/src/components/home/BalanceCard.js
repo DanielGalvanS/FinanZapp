@@ -23,12 +23,14 @@ export default function BalanceCard({
     }
   };
 
+  const isNegativeBalance = balance < 0;
+
   return (
     <View style={[CARD_STYLES.dark, styles.container]}>
       <Text style={[TYPOGRAPHY.caption, styles.label]}>
         Balance Total
       </Text>
-      <Text style={[TYPOGRAPHY.h1, styles.amount]}>
+      <Text style={[TYPOGRAPHY.h1, styles.amount, isNegativeBalance && { color: '#FF6B6B' }]}>
         {formatCurrency(balance, currency)}
       </Text>
       <Text style={[TYPOGRAPHY.caption, styles.currency]}>

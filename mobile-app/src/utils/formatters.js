@@ -5,7 +5,7 @@ export const formatCurrency = (amount, currency = 'MXN', locale = 'es-MX') => {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currency,
-  }).format(Math.abs(amount));
+  }).format(amount);
 };
 
 /**

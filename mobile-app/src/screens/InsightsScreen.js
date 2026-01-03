@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -33,47 +33,118 @@ export default function InsightsScreen() {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
 
   // Store hooks
-  const getMonthlyTotal = useExpenseStore((state) => state.getMonthlyTotal);
-  const getCategoryBreakdown = useExpenseStore((state) => state.getCategoryBreakdown);
-  const expenses = useExpenseStore((state) => state.expenses);
+  const allExpenses = useExpenseStore((state) => state.expenses);
+  const loadExpenses = useExpenseStore((state) => state.loadExpenses);
 
   // Data Store hooks
   const goals = useDataStore((state) => state.goals || []);
   const loadGoals = useDataStore((state) => state.loadGoals);
   const budgets = useDataStore((state) => state.budgets || []);
   const loadBudgets = useDataStore((state) => state.loadBudgets);
+  const categories = useDataStore((state) => state.categories);
+  const currentProject = useDataStore((state) => state.currentProject);
+  const showAllProjects = useDataStore((state) => state.showAllProjects);
+
+  // Filter expenses based on project selection - memoized to prevent infinite loops
+  const expenses = useMemo(() => {
+    return showAllProjects
+      ? allExpenses
+      : allExpenses.filter(e => e.project_id === currentProject?.id);
+  }, [allExpenses, showAllProjects, currentProject?.id]);
 
   // State for metrics
-  const [currentMonthTotal, setCurrentMonthTotal] = useState(0);
-  const [lastMonthTotal, setLastMonthTotal] = useState(0);
+  const [periodTotal, setPeriodTotal] = useState(0);
+  const [previousPeriodTotal, setPreviousPeriodTotal] = useState(0);
   const [categoryData, setCategoryData] = useState([]);
 
-  const calculateMetrics = () => {
+  // Get date range based on selected period
+  const getDateRange = useCallback((period, offset = 0) => {
     const now = new Date();
-    const currentTotal = getMonthlyTotal(now);
+    let startDate, endDate;
 
-    // Calculate previous month
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const prevTotal = getMonthlyTotal(lastMonth);
+    if (period === 'week') {
+      // Get start of week (Monday)
+      const dayOfWeek = now.getDay();
+      const diffToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - diffToMonday - (offset * 7));
+      startDate.setHours(0, 0, 0, 0);
 
-    setCurrentMonthTotal(currentTotal);
-    setLastMonthTotal(prevTotal);
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+      endDate.setHours(23, 59, 59, 999);
+    } else if (period === 'month') {
+      const year = now.getFullYear();
+      const month = now.getMonth() - offset;
+      startDate = new Date(year, month, 1);
+      endDate = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    } else if (period === 'year') {
+      const year = now.getFullYear() - offset;
+      startDate = new Date(year, 0, 1);
+      endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+    }
 
-    // Calculate category breakdown (current month)
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const startDate = new Date(year, month, 1).toISOString();
-    const endDate = new Date(year, month + 1, 0).toISOString();
+    return { startDate, endDate };
+  }, []);
 
-    const breakdown = getCategoryBreakdown({ startDate, endDate });
+  const calculateMetrics = useCallback(() => {
+    // Get current period range
+    const { startDate: currentStart, endDate: currentEnd } = getDateRange(selectedPeriod, 0);
+    // Get previous period range
+    const { startDate: prevStart, endDate: prevEnd } = getDateRange(selectedPeriod, 1);
+
+    // Filter expenses for current period
+    const currentPeriodExpenses = expenses.filter(e => {
+      const eDate = new Date(e.date);
+      return eDate >= currentStart && eDate <= currentEnd;
+    });
+    const currentTotal = currentPeriodExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+
+    // Filter expenses for previous period
+    const previousPeriodExpenses = expenses.filter(e => {
+      const eDate = new Date(e.date);
+      return eDate >= prevStart && eDate <= prevEnd;
+    });
+    const prevTotal = previousPeriodExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+
+    setPeriodTotal(currentTotal);
+    setPreviousPeriodTotal(prevTotal);
+
+    // Calculate category breakdown with category info from dataStore
+    const breakdownMap = {};
+    currentPeriodExpenses.forEach(expense => {
+      const categoryId = expense.category_id || 'unknown';
+      const category = categories.find(c => c.id === categoryId);
+
+      if (!breakdownMap[categoryId]) {
+        breakdownMap[categoryId] = {
+          id: categoryId,
+          name: category?.name || 'Sin categoría',
+          color: category?.color || '#9E9E9E',
+          icon: category?.icon || 'pricetag-outline',
+          total: 0,
+          count: 0,
+        };
+      }
+      breakdownMap[categoryId].total += parseFloat(expense.amount || 0);
+      breakdownMap[categoryId].count += 1;
+    });
+
+    const breakdown = Object.values(breakdownMap).sort((a, b) => b.total - a.total);
     setCategoryData(breakdown);
-  };
+  }, [expenses, categories, selectedPeriod, getDateRange]);
 
+  // Load data on mount
   useEffect(() => {
-    calculateMetrics();
+    loadExpenses(); // Load all expenses
     loadGoals();
     loadBudgets();
-  }, [expenses]);
+  }, []);
+
+  // Recalculate metrics when expenses or period change
+  useEffect(() => {
+    calculateMetrics();
+  }, [calculateMetrics]);
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
@@ -104,9 +175,15 @@ export default function InsightsScreen() {
   };
 
   const getPercentageChange = () => {
-    if (lastMonthTotal === 0) return currentMonthTotal > 0 ? '+100%' : '0%';
-    const change = ((currentMonthTotal - lastMonthTotal) / lastMonthTotal) * 100;
+    if (previousPeriodTotal === 0) return periodTotal > 0 ? '+100%' : '0%';
+    const change = ((periodTotal - previousPeriodTotal) / previousPeriodTotal) * 100;
     return `${change > 0 ? '+' : ''}${change.toFixed(1)}%`;
+  };
+
+  const getPeriodLabel = () => {
+    if (selectedPeriod === 'week') return 'vs semana anterior';
+    if (selectedPeriod === 'month') return 'vs mes anterior';
+    return 'vs año anterior';
   };
 
   // Prepare data for PieChart based on real category data
@@ -262,10 +339,10 @@ export default function InsightsScreen() {
               <Ionicons name="arrow-down-circle" size={ICON_SIZE.md} color={COLORS.error} />
               <Text style={[TYPOGRAPHY.caption, styles.statLabel]}>Gastos</Text>
               <Text style={[TYPOGRAPHY.h3, styles.statValue]}>
-                {formatCurrency(currentMonthTotal)}
+                {formatCurrency(periodTotal)}
               </Text>
               <Text style={[TYPOGRAPHY.tiny, { color: COLORS.error }]}>
-                {getPercentageChange()} vs mes anterior
+                {getPercentageChange()} {getPeriodLabel()}
               </Text>
             </View>
 

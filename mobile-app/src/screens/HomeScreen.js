@@ -24,6 +24,7 @@ import useDataStore from '../store/dataStore';
 import dataService from '../services/dataService';
 
 const PERIODS = [
+  { id: 'all', label: 'Todo' },
   { id: 'month', label: 'Este Mes' },
   { id: 'last-month', label: 'Mes Pasado' },
   { id: 'year', label: 'Este Año' },
@@ -46,6 +47,8 @@ export default function HomeScreen() {
   const currentProject = useDataStore((state) => state.currentProject);
   const setCurrentProject = useDataStore((state) => state.setCurrentProject);
   const isLoadingProjects = useDataStore((state) => state.isLoadingProjects);
+  const showAllProjects = useDataStore((state) => state.showAllProjects);
+  const setShowAllProjects = useDataStore((state) => state.setShowAllProjects);
 
   // Estado local
   const [selectedPeriod, setSelectedPeriod] = useState('month');
@@ -62,30 +65,63 @@ export default function HomeScreen() {
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [totalExpenses, setTotalExpenses] = useState(0);
 
-  // Cargar expenses cuando cambia el proyecto o período
+  // Cargar expenses cuando cambia el proyecto o período o showAllProjects
   useEffect(() => {
-    if (currentProject) {
-      loadExpenses();
+    loadExpenses();
+  }, [currentProject, selectedPeriod, showAllProjects]);
+
+  // Get date range based on selected period
+  const getDateRange = (period) => {
+    const now = new Date();
+    let startDate, endDate;
+
+    if (period === 'all') {
+      // Todo - no filter
+      return { startDate: null, endDate: null };
+    } else if (period === 'month') {
+      // Este mes
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    } else if (period === 'last-month') {
+      // Mes pasado
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    } else if (period === 'year') {
+      // Este año
+      startDate = new Date(now.getFullYear(), 0, 1);
+      endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
     }
-  }, [currentProject, selectedPeriod]);
+
+    return { startDate, endDate };
+  };
 
   const loadExpenses = async () => {
-    if (!currentProject) return;
+    // Si showAllProjects es false y no hay currentProject, no cargar nada
+    if (!showAllProjects && !currentProject) return;
 
     try {
       setIsLoadingExpenses(true);
 
-      // Obtener expenses del proyecto actual
-      const filters = { projectId: currentProject.id };
+      // Obtener expenses - sin filtro de proyecto si showAllProjects es true
+      const filters = showAllProjects ? {} : { projectId: currentProject.id };
       const expensesData = await dataService.getExpenses(filters);
 
-      setExpenses(expensesData);
+      // Filtrar por período seleccionado (si no es 'all')
+      const { startDate, endDate } = getDateRange(selectedPeriod);
+      const filteredExpenses = (startDate && endDate)
+        ? expensesData.filter(expense => {
+          const expenseDate = new Date(expense.date);
+          return expenseDate >= startDate && expenseDate <= endDate;
+        })
+        : expensesData; // 'all' - no filter
 
-      // Calcular gastos por categoría
-      calculateSpendingByCategory(expensesData);
+      setExpenses(filteredExpenses);
 
-      // Obtener transacciones recientes (últimas 5)
-      const recent = expensesData.slice(0, 5).map(expense => {
+      // Calcular gastos por categoría (solo del período filtrado)
+      calculateSpendingByCategory(filteredExpenses);
+
+      // Obtener transacciones recientes (últimas 5 del período filtrado)
+      const recent = filteredExpenses.slice(0, 5).map(expense => {
         const category = categories.find(cat => cat.id === expense.category_id);
         return {
           id: expense.id,
@@ -99,8 +135,8 @@ export default function HomeScreen() {
       });
       setRecentTransactions(recent);
 
-      // Calcular total de gastos
-      const total = expensesData.reduce((sum, expense) => sum + expense.amount, 0);
+      // Calcular total de gastos (solo del período filtrado)
+      const total = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
       setTotalExpenses(total);
 
     } catch (error) {
@@ -164,7 +200,13 @@ export default function HomeScreen() {
   };
 
   const handleSelectProject = (project) => {
+    setShowAllProjects(false);
     setCurrentProject(project);
+    setIsProjectSelectorExpanded(false);
+  };
+
+  const handleSelectAllProjects = () => {
+    setShowAllProjects(true);
     setIsProjectSelectorExpanded(false);
   };
 
@@ -387,13 +429,13 @@ export default function HomeScreen() {
           >
             <View style={styles.projectInfo}>
               <Ionicons
-                name="folder-outline"
+                name={showAllProjects ? "apps" : "folder-outline"}
                 size={ICON_SIZE.sm}
                 color={COLORS.text}
                 style={{ marginRight: SPACING.xs }}
               />
               <Text style={[TYPOGRAPHY.bodyBold, styles.projectName]} numberOfLines={1}>
-                {currentProject.name}
+                {showAllProjects ? 'Todos' : currentProject.name}
               </Text>
               <Ionicons
                 name={isProjectSelectorExpanded ? "chevron-up" : "chevron-down"}
@@ -429,13 +471,18 @@ export default function HomeScreen() {
         </View>
 
         {/* Period Selector */}
-        <View style={styles.periodSelector}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.periodSelectorScroll}
+          contentContainerStyle={styles.periodSelectorContent}
+        >
           {PERIODS.map((period) => (
             <TouchableOpacity
               key={period.id}
               style={[
-                selectedPeriod === period.id ? BUTTON_STYLES.pillActive : BUTTON_STYLES.pill,
-                styles.periodButton,
+                styles.periodPill,
+                selectedPeriod === period.id && styles.periodPillActive,
               ]}
               onPress={() => setSelectedPeriod(period.id)}
               activeOpacity={0.7}
@@ -443,25 +490,23 @@ export default function HomeScreen() {
               <Text
                 style={[
                   TYPOGRAPHY.caption,
-                  {
-                    color: selectedPeriod === period.id ? COLORS.white : COLORS.textSecondary,
-                    fontWeight: selectedPeriod === period.id ? '700' : '500',
-                  },
+                  styles.periodPillText,
+                  selectedPeriod === period.id && styles.periodPillTextActive,
                 ]}
               >
                 {period.label}
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         {/* Balance Card */}
         <BalanceCard
-          balance={0} // TODO: Implementar balance real
+          balance={-totalExpenses} // Negativo porque son gastos (sin ingresos por ahora)
           income={0} // TODO: Implementar ingresos reales
           expenses={totalExpenses}
           comparison="" // TODO: Implementar comparación con período anterior
-          comparisonTrend="neutral"
+          comparisonTrend={totalExpenses > 0 ? "down" : "neutral"}
           currency="MXN"
         />
 
@@ -551,8 +596,42 @@ export default function HomeScreen() {
           />
           {/* Dropdown */}
           <View style={[styles.projectDropdown, { top: dropdownTop }]}>
-            {/* Otros Proyectos */}
-            {projects.filter(p => p.id !== currentProject.id).map((project, index, array) => (
+            {/* Opción "Todos" */}
+            <TouchableOpacity
+              style={[
+                styles.projectDropdownItem,
+                showAllProjects && styles.projectDropdownItemActive
+              ]}
+              onPress={handleSelectAllProjects}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="apps"
+                size={ICON_SIZE.sm}
+                color={showAllProjects ? COLORS.primary : COLORS.textSecondary}
+                style={{ marginRight: SPACING.sm }}
+              />
+              <Text style={[
+                TYPOGRAPHY.body,
+                { color: showAllProjects ? COLORS.primary : COLORS.text, fontWeight: showAllProjects ? '600' : '400' }
+              ]}>
+                Todos los proyectos
+              </Text>
+              {showAllProjects && (
+                <Ionicons
+                  name="checkmark"
+                  size={ICON_SIZE.sm}
+                  color={COLORS.primary}
+                  style={{ marginLeft: 'auto' }}
+                />
+              )}
+            </TouchableOpacity>
+
+            {/* Separador */}
+            <View style={styles.dropdownDivider} />
+
+            {/* Proyectos individuales */}
+            {projects.map((project) => (
               <Swipeable
                 key={project.id}
                 renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, project)}
@@ -560,17 +639,36 @@ export default function HomeScreen() {
                 friction={2}
               >
                 <TouchableOpacity
-                  style={styles.projectDropdownItem}
+                  style={[
+                    styles.projectDropdownItem,
+                    !showAllProjects && currentProject?.id === project.id && styles.projectDropdownItemActive
+                  ]}
                   onPress={() => handleSelectProject(project)}
                   activeOpacity={0.7}
                 >
                   <Ionicons
                     name={project.icon || 'folder-outline'}
                     size={ICON_SIZE.sm}
-                    color={COLORS.textSecondary}
+                    color={!showAllProjects && currentProject?.id === project.id ? COLORS.primary : COLORS.textSecondary}
                     style={{ marginRight: SPACING.sm }}
                   />
-                  <Text style={[TYPOGRAPHY.body, { color: COLORS.text }]}>{project.name}</Text>
+                  <Text style={[
+                    TYPOGRAPHY.body,
+                    {
+                      color: !showAllProjects && currentProject?.id === project.id ? COLORS.primary : COLORS.text,
+                      fontWeight: !showAllProjects && currentProject?.id === project.id ? '600' : '400'
+                    }
+                  ]}>
+                    {project.name}
+                  </Text>
+                  {!showAllProjects && currentProject?.id === project.id && (
+                    <Ionicons
+                      name="checkmark"
+                      size={ICON_SIZE.sm}
+                      color={COLORS.primary}
+                      style={{ marginLeft: 'auto' }}
+                    />
+                  )}
                 </TouchableOpacity>
               </Swipeable>
             ))}
@@ -740,8 +838,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     // top se calcula dinámicamente con useSafeAreaInsets
     left: '50%',
-    marginLeft: -100, // La mitad del width (200/2)
-    width: 200,
+    marginLeft: -110, // La mitad del width (220/2)
+    width: 220,
     backgroundColor: COLORS.background,
     borderRadius: RADIUS.lg,
     paddingVertical: SPACING.xs,
@@ -766,6 +864,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     backgroundColor: COLORS.background,
+  },
+  projectDropdownItemActive: {
+    backgroundColor: COLORS.primaryAlpha10,
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginHorizontal: SPACING.md,
+    marginVertical: SPACING.xs,
   },
   checkmark: {
     width: 20,
@@ -818,14 +925,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  periodSelector: {
-    flexDirection: 'row',
+  periodSelectorScroll: {
+    marginBottom: SPACING.lg,
+  },
+  periodSelectorContent: {
     paddingHorizontal: SPACING.xl,
-    marginBottom: SPACING.xl,
     gap: SPACING.sm,
   },
-  periodButton: {
-    flex: 1,
+  periodPill: {
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.round,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  periodPillActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  periodPillText: {
+    color: COLORS.textSecondary,
+    fontWeight: '500',
+  },
+  periodPillTextActive: {
+    color: COLORS.white,
+    fontWeight: '700',
   },
   categoriesContainer: {
     gap: SPACING.md,

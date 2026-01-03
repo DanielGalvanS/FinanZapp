@@ -32,12 +32,14 @@ export default function ExpensesScreen() {
   const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState('Todo');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProjectId, setSelectedProjectId] = useState('all'); // 'all' o un project id
 
-  // Obtener proyecto actual y categorías del store
+  // Obtener proyecto actual, categorías y showAllProjects del store
   const currentProject = useDataStore((state) => state.currentProject);
   const categories = useDataStore((state) => state.categories);
   const projects = useDataStore((state) => state.projects);
+  const showAllProjects = useDataStore((state) => state.showAllProjects);
+  const setShowAllProjects = useDataStore((state) => state.setShowAllProjects);
+  const setCurrentProject = useDataStore((state) => state.setCurrentProject);
 
   // Obtener expenses del store de gastos
   const expenses = useExpenseStore((state) => state.expenses);
@@ -59,6 +61,18 @@ export default function ExpensesScreen() {
     return project?.name || 'Sin proyecto';
   };
 
+  // Handler para seleccionar un proyecto específico
+  const handleSelectProject = (projectId) => {
+    if (projectId === 'all') {
+      setShowAllProjects(true);
+    } else {
+      const project = projects.find(p => p.id === projectId);
+      if (project) {
+        setCurrentProject(project);
+      }
+    }
+  };
+
   // Transformar expenses para el formato esperado por TransactionCard
   const transformedExpenses = expenses.map((expense) => {
     const category = categories.find(cat => cat.id === expense.category_id);
@@ -78,7 +92,7 @@ export default function ExpensesScreen() {
 
   // Filtrar transacciones por proyecto, categoría y búsqueda
   const filteredTransactions = transformedExpenses.filter((transaction) => {
-    const matchesProject = selectedProjectId === 'all' || transaction.projectId === selectedProjectId;
+    const matchesProject = showAllProjects || transaction.projectId === currentProject?.id;
     const matchesFilter = selectedFilter === 'Todo' || transaction.category === selectedFilter;
     const matchesSearch = transaction.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesProject && matchesFilter && matchesSearch;
@@ -108,19 +122,19 @@ export default function ExpensesScreen() {
           <TouchableOpacity
             style={[
               styles.projectPill,
-              selectedProjectId === 'all' && styles.projectPillActive
+              showAllProjects && styles.projectPillActive
             ]}
-            onPress={() => setSelectedProjectId('all')}
+            onPress={() => handleSelectProject('all')}
             activeOpacity={0.7}
           >
             <Ionicons
               name="apps"
               size={14}
-              color={selectedProjectId === 'all' ? COLORS.white : COLORS.textSecondary}
+              color={showAllProjects ? COLORS.white : COLORS.textSecondary}
             />
             <Text style={[
               styles.projectPillText,
-              selectedProjectId === 'all' && styles.projectPillTextActive
+              showAllProjects && styles.projectPillTextActive
             ]}>
               Todos
             </Text>
@@ -131,18 +145,18 @@ export default function ExpensesScreen() {
               key={project.id}
               style={[
                 styles.projectPill,
-                selectedProjectId === project.id && styles.projectPillActive
+                !showAllProjects && currentProject?.id === project.id && styles.projectPillActive
               ]}
-              onPress={() => setSelectedProjectId(project.id)}
+              onPress={() => handleSelectProject(project.id)}
               activeOpacity={0.7}
             >
               <View style={[
                 styles.projectDot,
-                { backgroundColor: selectedProjectId === project.id ? COLORS.white : (project.color || COLORS.primary) }
+                { backgroundColor: !showAllProjects && currentProject?.id === project.id ? COLORS.white : (project.color || COLORS.primary) }
               ]} />
               <Text style={[
                 styles.projectPillText,
-                selectedProjectId === project.id && styles.projectPillTextActive
+                !showAllProjects && currentProject?.id === project.id && styles.projectPillTextActive
               ]}>
                 {project.name}
               </Text>
