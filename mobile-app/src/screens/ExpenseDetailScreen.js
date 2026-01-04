@@ -67,7 +67,7 @@ export default function ExpenseDetailScreen() {
   // Intentar cargar expense desde store o Supabase
   useEffect(() => {
     loadExpense();
-  }, [id]);
+  }, [id, categories, projects]);
 
   const loadExpense = async () => {
     try {
@@ -91,6 +91,7 @@ export default function ExpenseDetailScreen() {
       if (foundExpense) {
         // Transformar a formato que usa la app
         const category = categories.find(cat => cat.id === foundExpense.category_id);
+        const project = projects.find(p => p.id === foundExpense.project_id);
         const expenseFormatted = {
           id: foundExpense.id,
           name: foundExpense.name,
@@ -105,6 +106,11 @@ export default function ExpenseDetailScreen() {
             color: category.color,
           } : null,
           projectId: foundExpense.project_id,
+          projectName: project?.name || 'Sin proyecto',
+          project: project ? {
+            id: project.id,
+            name: project.name,
+          } : null,
           description: foundExpense.description,
           date: foundExpense.date,
           receipts: foundExpense.receipts || [],

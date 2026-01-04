@@ -23,7 +23,7 @@ import { showImagePickerOptions } from '../utils/imagePickerHelper';
 
 export default function AddExpenseScreen() {
   const router = useRouter();
-  const addExpense = useExpenseStore((state) => state.addExpense);
+  const addExpenseToStore = useExpenseStore((state) => state.addExpenseToStore);
 
   // Datos desde el store global (con caché y persistencia)
   const categories = useDataStore((state) => state.categories);
@@ -104,7 +104,7 @@ export default function AddExpenseScreen() {
         comments: [],
       };
 
-      addExpense(expenseForStore);
+      addExpenseToStore(expenseForStore);
 
       Alert.alert(
         'Gasto Guardado',

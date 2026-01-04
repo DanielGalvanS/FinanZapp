@@ -36,6 +36,13 @@ const useExpenseStore = create(
         }
       },
 
+      // Agregar gasto al store local sin guardar en BD (para cuando ya se guardó en Supabase)
+      addExpenseToStore: (expense) => {
+        set((state) => ({
+          expenses: [expense, ...state.expenses],
+        }));
+      },
+
       // Actualizar un gasto existente (TODO: Implementar update en backend)
       updateExpense: (id, updates) => {
         set((state) => ({

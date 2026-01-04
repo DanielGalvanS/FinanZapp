@@ -65,10 +65,10 @@ export default function HomeScreen() {
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [totalExpenses, setTotalExpenses] = useState(0);
 
-  // Cargar expenses cuando cambia el proyecto o período o showAllProjects
+  // Cargar expenses cuando cambia el proyecto o período o showAllProjects o categorías
   useEffect(() => {
     loadExpenses();
-  }, [currentProject, selectedPeriod, showAllProjects]);
+  }, [currentProject, selectedPeriod, showAllProjects, categories]);
 
   // Get date range based on selected period
   const getDateRange = (period) => {

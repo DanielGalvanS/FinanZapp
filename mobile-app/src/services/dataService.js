@@ -12,7 +12,6 @@ class DataService {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .eq('is_system', true)
         .order('name');
 
       if (error) throw error;

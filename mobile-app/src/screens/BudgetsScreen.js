@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -15,16 +15,60 @@ import { BudgetCard } from '../components/insights';
 
 // Datos de ejemplo
 import useDataStore from '../store/dataStore';
+import useExpenseStore from '../store/expenseStore';
 import { useEffect } from 'react';
 
 export default function BudgetsScreen() {
   const router = useRouter();
   const budgets = useDataStore((state) => state.budgets);
   const loadBudgets = useDataStore((state) => state.loadBudgets);
+  const expenses = useExpenseStore((state) => state.expenses);
+  const loadExpenses = useExpenseStore((state) => state.loadExpenses);
 
   useEffect(() => {
     loadBudgets();
+    loadExpenses();
   }, []);
+
+  // Calcular gastos por categoría para el período actual (mes)
+  const spentByCategory = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const categoryTotals = {};
+
+    console.log('[Budgets] Total expenses:', expenses.length);
+    console.log('[Budgets] Current month:', currentMonth + 1, 'Year:', currentYear);
+
+    expenses.forEach(expense => {
+      const expenseDate = new Date(expense.date);
+      // Filtrar solo gastos del mes actual
+      if (expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear) {
+        const categoryId = expense.category_id;
+        if (!categoryTotals[categoryId]) {
+          categoryTotals[categoryId] = 0;
+        }
+        categoryTotals[categoryId] += parseFloat(expense.amount) || 0;
+      }
+    });
+
+    console.log('[Budgets] Category totals:', categoryTotals);
+    return categoryTotals;
+  }, [expenses]);
+
+  // Presupuestos con gastos calculados dinámicamente
+  const budgetsWithSpent = useMemo(() => {
+    console.log('[Budgets] Budgets:', budgets.map(b => ({ id: b.id, categoryId: b.category?.id, categoryName: b.category?.name })));
+    return budgets.map(budget => {
+      const spent = spentByCategory[budget.category?.id] || 0;
+      console.log('[Budgets] Budget category:', budget.category?.id, 'spent:', spent);
+      return {
+        ...budget,
+        spent: spent,
+      };
+    });
+  }, [budgets, spentByCategory]);
 
   const handleBack = () => {
     router.back();
@@ -39,11 +83,11 @@ export default function BudgetsScreen() {
   };
 
   const getTotalSpent = () => {
-    return budgets.reduce((sum, budget) => sum + budget.spent, 0);
+    return budgetsWithSpent.reduce((sum, budget) => sum + budget.spent, 0);
   };
 
   const getTotalBudget = () => {
-    return budgets.reduce((sum, budget) => sum + budget.total, 0);
+    return budgetsWithSpent.reduce((sum, budget) => sum + budget.total, 0);
   };
 
   const getOverallPercentage = () => {
@@ -107,11 +151,11 @@ export default function BudgetsScreen() {
         {/* Budgets List */}
         <View style={LAYOUT.section}>
           <Text style={[TYPOGRAPHY.h3, styles.sectionTitle]}>
-            Mis Presupuestos ({budgets.length})
+            Mis Presupuestos ({budgetsWithSpent.length})
           </Text>
 
-          {budgets.length > 0 ? (
-            budgets.map((budget) => (
+          {budgetsWithSpent.length > 0 ? (
+            budgetsWithSpent.map((budget) => (
               <TouchableOpacity
                 key={budget.id}
                 onPress={() => handleBudgetPress(budget)}

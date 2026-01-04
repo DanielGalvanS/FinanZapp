@@ -48,7 +48,7 @@ export default function Header({
           activeOpacity={0.7}
         >
           {rightIcon ? (
-            <Ionicons name={rightIcon} size={ICON_SIZE.md} color={COLORS.white} />
+            <Ionicons name={rightIcon} size={ICON_SIZE.md} color={COLORS.text} />
           ) : rightText ? (
             <Text style={TYPOGRAPHY.bodyBold}>{rightText}</Text>
           ) : (

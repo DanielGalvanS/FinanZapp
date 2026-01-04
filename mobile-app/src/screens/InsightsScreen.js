@@ -52,6 +52,36 @@ export default function InsightsScreen() {
       : allExpenses.filter(e => e.project_id === currentProject?.id);
   }, [allExpenses, showAllProjects, currentProject?.id]);
 
+  // Calcular gastos por categoría para el mes actual (para presupuestos)
+  const spentByCategory = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const categoryTotals = {};
+
+    allExpenses.forEach(expense => {
+      const expenseDate = new Date(expense.date);
+      if (expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear) {
+        const categoryId = expense.category_id;
+        if (!categoryTotals[categoryId]) {
+          categoryTotals[categoryId] = 0;
+        }
+        categoryTotals[categoryId] += parseFloat(expense.amount) || 0;
+      }
+    });
+
+    return categoryTotals;
+  }, [allExpenses]);
+
+  // Presupuestos con gastos calculados dinámicamente
+  const budgetsWithSpent = useMemo(() => {
+    return budgets.map(budget => ({
+      ...budget,
+      spent: spentByCategory[budget.category?.id] || 0,
+    }));
+  }, [budgets, spentByCategory]);
+
   // State for metrics
   const [periodTotal, setPeriodTotal] = useState(0);
   const [previousPeriodTotal, setPreviousPeriodTotal] = useState(0);
@@ -286,7 +316,19 @@ export default function InsightsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={TYPOGRAPHY.h2}>Análisis</Text>
+        <View>
+          <Text style={TYPOGRAPHY.h2}>Análisis</Text>
+          <View style={styles.projectIndicator}>
+            <Ionicons
+              name={showAllProjects ? "apps" : "folder"}
+              size={14}
+              color={COLORS.primary}
+            />
+            <Text style={styles.projectIndicatorText}>
+              {showAllProjects ? 'Todos los proyectos' : currentProject?.name || 'Sin proyecto'}
+            </Text>
+          </View>
+        </View>
         <TouchableOpacity style={styles.exportButton} onPress={handleExport}>
           <Ionicons name="download-outline" size={ICON_SIZE.sm} color={COLORS.primary} />
         </TouchableOpacity>
@@ -398,16 +440,21 @@ export default function InsightsScreen() {
             </TouchableOpacity>
           </View>
 
-          {budgets.length > 0 ? (
-            budgets.map((budget) => (
-              <BudgetCard
+          {budgetsWithSpent.length > 0 ? (
+            budgetsWithSpent.map((budget) => (
+              <TouchableOpacity
                 key={budget.id}
-                name={budget.category?.name || 'Sin categoría'}
-                spent={budget.spent}
-                total={budget.total}
-                icon={budget.category?.icon || 'wallet-outline'}
-                color={budget.category?.color || COLORS.primary}
-              />
+                activeOpacity={0.7}
+                onPress={() => router.push(`/budget-detail/${budget.id}`)}
+              >
+                <BudgetCard
+                  name={budget.category?.name || 'Sin categoría'}
+                  spent={budget.spent}
+                  total={budget.total}
+                  icon={budget.category?.icon || 'wallet-outline'}
+                  color={budget.category?.color || COLORS.primary}
+                />
+              </TouchableOpacity>
             ))
           ) : (
             <Text style={styles.emptyText}>No hay presupuestos activos</Text>
@@ -559,5 +606,16 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 100,
+  },
+  projectIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.xs,
+    gap: SPACING.xs,
+  },
+  projectIndicatorText: {
+    fontSize: 13,
+    color: COLORS.primary,
+    fontWeight: '500',
   },
 });
